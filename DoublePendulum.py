@@ -17,51 +17,51 @@ from ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-    colloc_method = TRAP # HERM is really slow
+	colloc_method = TRAP # HERM is really slow
 
-    print("Initialize")
-    # physical parameters
-    l1 = 2.0
-    l2 = 2.0
-    m1 = 3.0
-    m2 = 3.0
-    g = 9.81
+	print("Initialize")
+	# physical parameters
+	l1 = 2.0
+	l2 = 2.0
+	m1 = 3.0
+	m2 = 3.0
+	g = 9.81
 
-    # define variables
-    theta, th_dot, phi, phi_dot = symbols("theta th_dot phi phi_dot")
-    tau = symbols("tau")
-    state_vars = [theta, th_dot, phi, phi_dot]
-    control_vars = [tau]
+	# define variables
+	theta, th_dot, phi, phi_dot = symbols("theta th_dot phi phi_dot")
+	tau = symbols("tau")
+	state_vars = [theta, th_dot, phi, phi_dot]
+	control_vars = [tau]
 
-    # Given system equations
-    ode = [th_dot,
-           (l2*(g*m1*sin(theta) + g*m2*sin(theta) - l2*m2*sin(phi - theta)*phi_dot**2) - (g*l2*m2*sin(phi) +
-                                                                                          l1*l2*m2*sin(phi - theta)*th_dot**2 - tau)*cos(phi - theta))/(l1*l2*(-m1 + m2*cos(phi - theta)**2 - m2)),
-           phi_dot,
-           (-l2*m2*(g*m1*sin(theta) + g*m2*sin(theta) - l2*m2*sin(phi - theta)*phi_dot**2)*cos(phi - theta) + (m1 + m2)
-            * (g*l2*m2*sin(phi) + l1*l2*m2*sin(phi - theta)*th_dot**2 - tau))/(l2**2*m2*(-m1 + m2*cos(phi - theta)**2 - m2))
-           ]
+	# Given system equations
+	ode = [th_dot,
+		(l2*(g*m1*sin(theta) + g*m2*sin(theta) - l2*m2*sin(phi - theta)*phi_dot**2) - (g*l2*m2*sin(phi) +
+													  l1*l2*m2*sin(phi - theta)*th_dot**2 - tau)*cos(phi - theta))/(l1*l2*(-m1 + m2*cos(phi - theta)**2 - m2)),
+		phi_dot,
+		(-l2*m2*(g*m1*sin(theta) + g*m2*sin(theta) - l2*m2*sin(phi - theta)*phi_dot**2)*cos(phi - theta) + (m1 + m2)
+		 * (g*l2*m2*sin(phi) + l1*l2*m2*sin(phi - theta)*th_dot**2 - tau))/(l2**2*m2*(-m1 + m2*cos(phi - theta)**2 - m2))
+		]
 
-    t0_ = 0
-    tf_ = 6
-    N_ = 100
+	t0_ = 0
+	tf_ = 6
+	N_ = 100
 
-    X_start = np.array([0, 0, 0, 0], dtype=np.float) # arbitrary goal state
-    X_goal = np.array([np.pi, 0, np.pi, 0], dtype=np.float) # arbitrary goal state
+	X_start = np.array([0, 0, 0, 0], dtype=np.float) # arbitrary goal state
+	X_goal = np.array([np.pi, 0, np.pi, 0], dtype=np.float) # arbitrary goal state
 
-    # bounds
-    u_max = 100
-    bounds = [[-2*np.pi,2*np.pi],[None, None],[-2*np.pi,2*np.pi],[None, None],[-u_max,u_max]]
-    tspan = np.linspace(t0_, tf_, N_)
+	# bounds
+	u_max = 100
+	bounds = [[-2*np.pi,2*np.pi],[None, None],[-2*np.pi,2*np.pi],[None, None],[-u_max,u_max]]
+	tspan = np.linspace(t0_, tf_, N_)
 
-    # Define problem
-    problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	# Define problem
+	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
-    # solve problem
-    sol_c = problem.solve(umax=u_max, bounds=bounds)
+	# solve problem
+	sol_c = problem.solve(umax=u_max, bounds=bounds)
 
-    # evaluate solution
-    problem.evaluate()
+	# evaluate solution
+	problem.evaluate()
 
-    # animate solution
-    draw_double_pendulum(sol_c.x, [l1, l2, m1, m2, g])
+	# animate solution
+	draw_double_pendulum(sol_c.x, [l1, l2, m1, m2, g])

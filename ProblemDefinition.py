@@ -22,26 +22,27 @@ class CollocationProblem:
 				X_start, 
 				X_goal, 
 				tspan,
-				colloc_method):
+				colloc_method,
+				refine_mesh=False, u_guess=1.0):
 
 		self.ode = ode
 		self.state_vars = state_vars
 		self.control_vars = control_vars
 		self.ode_fun = lambdify(self.state_vars+self.control_vars, Matrix(self.ode), 'numpy')
 		self.colloc_method = colloc_method
+		self.tspan = tspan
 
 		self.X_start = X_start
 		self.X_goal = X_goal
 
 		# Get variable dimensions
-		self.tspan = tspan
-		self.N = tspan.size
+		self.N = self.tspan.size
 		self.X_dim = len(state_vars)
 		self.U_dim = len(control_vars)
 		self.all_vars = state_vars + control_vars
 
 		self.h = Symbol("h")  # symbolic time step
-		self._h = tspan[1:] - tspan[:-1]  # time steps
+		self._h = self.tspan[1:] - self.tspan[:-1]  # time steps
 
 		# Create a set of "prev" variables for accessing values at previous time step
 		self.prev_all_vars = [Symbol(str(var)+"_prev") for var in self.all_vars]
