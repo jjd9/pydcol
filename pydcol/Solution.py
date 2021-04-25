@@ -4,9 +4,11 @@ Class for storing collocation solutions
 
 """
 
+# third party imports
 from scipy.interpolate import interp1d
 
-from CollocMethods import *
+# pydcol imports
+from .CollocMethods import *
 
 class Solution:
 

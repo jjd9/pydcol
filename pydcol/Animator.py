@@ -4,6 +4,7 @@ Convenience functions for animating the motion of different systems
 
 """
 
+# third party imports
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np

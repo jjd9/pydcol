@@ -1,17 +1,17 @@
-# third paty imports
+# third party imports
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate._ivp.common import num_jac
 from scipy.optimize import minimize, NonlinearConstraint
 from scipy.integrate import solve_ivp
 from sympy import Matrix, hessian, Symbol, symbols, lambdify
 from sympy.matrices.dense import matrix_multiply_elementwise
-import matplotlib.pyplot as plt
 
 # pydcol imports
-from Objective import Objective
-from EqualityConstraints import EqualityConstraints
-from CollocMethods import *
-from Solution import Solution
+from .Objective import Objective
+from .EqualityConstraints import EqualityConstraints
+from .CollocMethods import *
+from .Solution import Solution
 
 class CollocationProblem:
 

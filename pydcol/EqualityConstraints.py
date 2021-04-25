@@ -1,10 +1,8 @@
+# third party imports
+import numpy as np
+from symengine import zeros, diff, sympify, Lambdify
 from sympy import Matrix, hessian, Symbol, symbols, lambdify
 from sympy.matrices.dense import matrix_multiply_elementwise
-
-from symengine import zeros, diff, sympify
-from symengine import Lambdify
-
-import numpy as np
 
 def fast_jac(expr, vs):
     J = zeros(len(expr), len(vs))

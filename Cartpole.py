@@ -11,9 +11,9 @@ from sympy import symbols
 from sympy import sin, cos
 from sympy import Matrix, lambdify
 
-from Animator import draw_cartpole
-from CollocMethods import *
-from ProblemDefinition import CollocationProblem
+from pydcol.Animator import draw_cartpole
+from pydcol.CollocMethods import *
+from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 	print("Initialize")

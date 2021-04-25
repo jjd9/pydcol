@@ -1,9 +1,8 @@
+# third party imports
+import numpy as np
+from symengine import Lambdify
 from sympy import Matrix, hessian, Symbol, symbols, lambdify
 from sympy.matrices.dense import matrix_multiply_elementwise
-
-from symengine import Lambdify
-
-import numpy as np
 
 class Objective:
     def __init__(self, parent, Obj):
