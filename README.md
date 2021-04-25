@@ -9,4 +9,5 @@ High priority:
 - [ ] Implement our own adaptive, implicit ivp solver.
 
 Low priority:
+- [ ] More examples!
 - [ ] Add interface to ipopt
