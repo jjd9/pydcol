@@ -1,5 +1,6 @@
 # third paty imports
 import numpy as np
+from scipy.integrate._ivp.common import num_jac
 from scipy.optimize import minimize, NonlinearConstraint
 from scipy.integrate import solve_ivp
 from sympy import Matrix, hessian, Symbol, symbols, lambdify
@@ -146,17 +147,22 @@ class CollocationProblem:
 		eval_tspan = np.linspace(tspan[0],tspan[-1],100)
 		sol_ivp = solve_ivp(system_eqs, [tspan[0],tspan[-1]], self.X_start, method='RK45', t_eval=eval_tspan)
 
+		colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y']
+
 		fig, axs = plt.subplots(2, 1)
 		axs[0].set_title("Collocation Points vs. Integration Results")
 		for i in range(self.X_dim):
-			axs[0].plot(tspan, X[:,i],'o')
-			axs[0].plot(sol_ivp.t, sol_ivp.y[i,:])
+			axs[0].plot(tspan, X[:,i],'o',color=colors[i])
+			axs[0].plot(sol_ivp.t, sol_ivp.y[i,:],color=colors[i])
 		axs[0].set_ylabel("State Variables")
+		axs[0].plot([], [],'o',color='k',label='Colloc solution')
+		axs[0].plot([], [],color='k',label='IVP solution')
+		axs[0].legend()
 
 		U_t = np.array(self.sol_c.u_t(sol_ivp.t)).reshape(-1, self.U_dim)
 		for j in range(self.U_dim):
-			axs[1].plot(tspan, U[:,j],'o')
-			axs[1].plot(sol_ivp.t, U_t[:,j])
+			axs[1].plot(tspan, U[:,j],'o',color=colors[j])
+			axs[1].plot(sol_ivp.t, U_t[:,j],color=colors[j])
 		axs[1].set_ylabel("Control Variables")
 		axs[1].set_xlabel("Time [s]")
 
