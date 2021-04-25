@@ -5,6 +5,7 @@ from scipy.integrate._ivp.common import num_jac
 from scipy.optimize import minimize, NonlinearConstraint
 from scipy.integrate import solve_ivp
 from sympy import Matrix, hessian, Symbol, symbols, lambdify
+from sympy.core.function import BadArgumentsError
 from sympy.matrices.dense import matrix_multiply_elementwise
 
 # pydcol imports
@@ -90,7 +91,7 @@ class CollocationProblem:
 		print("Equality constraints")
 		self.equality_constr = EqualityConstraints(self, Matrix(C_eq))
 
-	def solve(self, x0=None, bounds=None, umax=0.0):
+	def solve(self, x0=None, bounds=None, umax=0.0, solver='scipy'):
 		
 		self.is_solved = False
 		_bounds = bounds * self.N
@@ -104,22 +105,28 @@ class CollocationProblem:
 				x0.append(xnew.tolist() + [u_mid])
 			x0 = np.array(x0).ravel()
 
-		# Problem constraints
-		constr_eq = NonlinearConstraint(self.equality_constr.eval,
-										lb=0,
-										ub=0,
-										jac=self.equality_constr.jac,
-										hess=self.equality_constr.hess)
+		if solver=='scipy':
+			# Problem constraints
+			constr_eq = NonlinearConstraint(self.equality_constr.eval,
+											lb=0,
+											ub=0,
+											jac=self.equality_constr.jac,
+											hess=self.equality_constr.hess)
 
-		# Solve Problem
-		sol_opt = minimize(self.objective.eval,
-						x0,
-						method="trust-constr",
-						jac=self.objective.jac,
-						hess=self.objective.hess,
-						constraints=(constr_eq),
-						bounds=_bounds,
-						options={'sparse_jacobian': True})
+			# Solve Problem
+			sol_opt = minimize(self.objective.eval,
+							x0,
+							method="trust-constr",
+							jac=self.objective.jac,
+							hess=self.objective.hess,
+							constraints=(constr_eq),
+							bounds=_bounds,
+							options={'sparse_jacobian': True})
+		elif solver == "ipopt":
+			raise(NotImplementedError("Ipop solver not implemented yet!"))			
+		else:
+			raise(BadArgumentsError("Error unsupported solver!"))
+
 		print("Done")
 		if sol_opt.success:
 			print("Success :-)")
