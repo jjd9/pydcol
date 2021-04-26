@@ -10,4 +10,4 @@ High priority:
 
 Low priority:
 - [ ] More examples!
-- [ ] Add interface to ipopt
+- [x] Add interface to ipopt
