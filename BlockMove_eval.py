@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 5
-	N_ = 4
+	N_ = 3
 	tspan = np.linspace(t0_, tf_, N_)
 
 	error = []
@@ -72,8 +72,9 @@ if __name__ == "__main__":
 
 	plt.plot(error)
 	plt.show()
-	# # evaluate solution
-	# problem.evaluate()
+
+	# evaluate solution
+	problem.evaluate()
 
 	# # animate solution
 	# draw_block(sol_c.x)

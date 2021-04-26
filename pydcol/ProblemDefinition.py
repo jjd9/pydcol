@@ -1,4 +1,5 @@
 # third party imports
+import ipyopt
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate._ivp.common import num_jac
@@ -12,7 +13,7 @@ from sympy.matrices.dense import matrix_multiply_elementwise
 from .Objective import Objective
 from .EqualityConstraints import EqualityConstraints
 from .CollocMethods import *
-from .Solution import Solution
+from .Solution import Solution, Solution_ipopt
 
 class CollocationProblem:
 
@@ -94,7 +95,6 @@ class CollocationProblem:
 	def solve(self, x0=None, bounds=None, umax=0.0, solver='scipy'):
 		
 		self.is_solved = False
-		_bounds = bounds * self.N
 
 		if x0 is None:
 			u_mid = 0.1
@@ -106,6 +106,8 @@ class CollocationProblem:
 			x0 = np.array(x0).ravel()
 
 		if solver=='scipy':
+			_bounds = bounds * self.N
+
 			# Problem constraints
 			constr_eq = NonlinearConstraint(self.equality_constr.eval,
 											lb=0,
@@ -122,24 +124,85 @@ class CollocationProblem:
 							constraints=(constr_eq),
 							bounds=_bounds,
 							options={'sparse_jacobian': True})
+
+			# convert scipy solution to our format
+			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan)
+			self.is_solved = sol_opt.success
 		elif solver == "ipopt":
-			raise(NotImplementedError("Ipop solver not implemented yet!"))			
+			# raise(NotImplementedError("Ipop solver not implemented yet!"))			
+			# setup variable bounds
+			nvar = self.N * len(bounds)
+			x_L = np.zeros(nvar)
+			x_U = np.zeros(nvar)
+			v_idx = 0
+			for i in range(self.N):
+				for b_pair in bounds:
+					if b_pair[0] is None:
+						x_L[v_idx] = -1e9
+					else:
+						x_L[v_idx] = b_pair[0]
+					if b_pair[1] is None:
+						x_U[v_idx] = 1e9
+					else:
+						x_U[v_idx] = b_pair[1]						
+					v_idx += 1
+
+			# setup equality constraints
+			ncon = self.equality_constr.eval(x0).size
+			g_L = np.zeros((ncon,))
+			g_U = np.zeros((ncon,))
+
+			# finding out which entries of the constraint jacobian and problem hessian are allways
+			# nonzero. 
+			ones_jac_g = self.equality_constr.jac(x0, fill=True)
+			eval_jac_g_sparsity_indices = np.column_stack(np.where(ones_jac_g != 0))
+			jac_g_idx = (eval_jac_g_sparsity_indices[:,0], eval_jac_g_sparsity_indices[:,1])
+
+			lagrange = np.ones(ncon)
+			ones_h = self.objective.hess(x0, fill=True) + self.equality_constr.hess(x0, lagrange, fill=True)
+			eval_h_sparsity_indices = np.column_stack(np.where(ones_h != 0))
+			h_idx = (eval_h_sparsity_indices[:,0], eval_h_sparsity_indices[:,1])
+
+			def eval_grad_f(x, out):
+				out[()] = self.objective.jac(x).ravel()
+				return out
+
+			def eval_g(x, out):
+				out[()] = self.equality_constr.eval(x).ravel()
+				return out
+
+			def eval_jac_g(x, out):
+				J = self.equality_constr.jac(x)
+				out[()] = J[jac_g_idx[0], jac_g_idx[1]].ravel()
+				return out
+
+			def eval_h(x, lagrange, obj_factor, out):
+				"""
+				Combined hessian for the problem. Used by ipopt.
+				"""
+				H = self.objective.hess(x) * obj_factor + self.equality_constr.hess(x, lagrange)
+				out[()] = H[h_idx[0], h_idx[1]].ravel()
+				return out
+
+			nlp = ipyopt.Problem(nvar, x_L, x_U, 
+								 ncon, g_L, g_U, 
+								 jac_g_idx, h_idx, 
+								 self.objective.eval, eval_grad_f, 
+								 eval_g, eval_jac_g, 
+								 eval_h)
+
+			_x, obj, status = nlp.solve(x0)
+			# convert scipy solution to our format
+			self.sol_c = Solution_ipopt(_x, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan)
+			self.is_solved = status == 0
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))
 
 		print("Done")
-		if sol_opt.success:
+		if self.is_solved:
 			print("Success :-)")
 		else:
 			print("Failure :-(")
-
-		print("Constraint violation: ", sol_opt.constr_violation)
-		print("Iterations: ", sol_opt.niter)
-
-		self.is_solved = sol_opt.success
-
-		# convert scipy solution to our format
-		self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan)
 
 		return self.sol_c
 

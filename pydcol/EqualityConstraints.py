@@ -78,7 +78,7 @@ class EqualityConstraints:
         terminal_constr = (_X[-1,:] - self.X_goal).ravel()
         return np.hstack((_out, initial_constr, terminal_constr))
 
-    def jac(self, arg):
+    def jac(self, arg, fill=False):
         V = arg.reshape(self.N, self.X_dim+self.U_dim)
         _in = np.hstack((V[:-1,:], V[1:,:],self._h.reshape(-1,1)))
         J = self.ceq_jac_lambda(_in.T)
@@ -86,7 +86,11 @@ class EqualityConstraints:
         # jac should be Num_constraints x Opt_dim
         Opt_dim = (self.X_dim + self.U_dim)
         Ceq_dim = self.X_dim
-        jac = np.zeros((Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.N))
+        jac = np.zeros((Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.N), dtype=np.float)
+
+        if fill:
+            J[:,:,:] = 1.0
+
         for i in range(self.N-1):
             jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] = J[:,:,i].T
         # initial and terminal constraint gradients are easy
@@ -94,7 +98,7 @@ class EqualityConstraints:
         jac[Ceq_dim * (self.N-1) + self.X_dim:,-(self.X_dim+self.U_dim):-self.U_dim] = np.eye(self.X_dim)
         return jac
 
-    def hess(self, arg_x, arg_v):
+    def hess(self, arg_x, arg_v, fill=False):
         if self.is_linear:
             hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)
         else:
@@ -102,6 +106,9 @@ class EqualityConstraints:
             _L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.X_dim)
             _in = np.hstack((V[:-1,:], V[1:,:], _L, self._h.reshape(-1,1)))
             H = self.ceq_hess_lamb(_in.T)
+
+            if fill:
+                H[:,:,:] = 0.5
 
             # Reshape the lagrange multiplier vector
             hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)

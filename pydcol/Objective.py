@@ -33,12 +33,16 @@ class Objective:
         V = arg.reshape(self.N, self.X_dim+self.U_dim)
         return self.obj_jac_lambda(V.T).squeeze().T.ravel()
 
-    def hess(self, arg):
-        V = arg.reshape(self.N, self.X_dim+self.U_dim)
-        hess_block = self.obj_hess_lambda(V.T)
+    def hess(self, arg, fill=False):
         Sys_dim = self.X_dim + self.U_dim
         Opt_dim = Sys_dim * self.N
-        hess = np.zeros((Opt_dim, Opt_dim))
+        hess = np.zeros((Opt_dim, Opt_dim), dtype=np.float)
+        V = arg.reshape(self.N, self.X_dim+self.U_dim)
+        hess_block = self.obj_hess_lambda(V.T)
+
+        if fill:
+            hess_block[:,:,:] = 1.0
+
         for i in range(self.N):
             hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] = hess_block[:,:,i]
         return hess
