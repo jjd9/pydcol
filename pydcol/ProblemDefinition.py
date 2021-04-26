@@ -220,7 +220,7 @@ class CollocationProblem:
 
 		colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y']
 
-		fig, axs = plt.subplots(2, 1)
+		_, axs = plt.subplots(2, 1)
 		axs[0].set_title("Collocation Points vs. Integration Results")
 		for i in range(self.X_dim):
 			axs[0].plot(tspan, X[:,i],'o',color=colors[i])

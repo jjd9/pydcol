@@ -1,35 +1,11 @@
 # third party imports
 import numpy as np
-from symengine import zeros, diff, sympify, Lambdify
+from symengine import Lambdify
 from sympy import Matrix, hessian, Symbol, symbols, lambdify
 from sympy.matrices.dense import matrix_multiply_elementwise
 
-def fast_jac(expr, vs):
-    J = zeros(len(expr), len(vs))
-    for i in range(len(expr)):
-        for j in range(len(vs)):
-            J[i, j] = diff(expr[i], vs[j])
-    return J
-
-def fast_hess(expr, vs):
-    H = zeros(len(vs), len(vs))
-    for i in range(len(vs)):
-        for j in range(len(vs)):
-            if i > j:
-                H[i, j] = H[j, i]
-            else:
-                H[i, j] = diff(expr, vs[i], vs[j])
-    return H
-
-def fast_half_hess(expr, vs):
-    H = zeros(len(vs), len(vs))
-    for i in range(len(vs)):
-        for j in range(i, len(vs)):
-            H[i, j] = diff(expr, vs[i], vs[j])
-            if i == j:
-                H[i, j] *= 0.5
-    return H
-
+# pydcol imports
+from .SymUtils import fast_jac, fast_half_hess
 
 class EqualityConstraints:
     def __init__(self, parent, C_eq):
@@ -88,6 +64,7 @@ class EqualityConstraints:
         Ceq_dim = self.X_dim
         jac = np.zeros((Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.N), dtype=np.float)
 
+        # used for determining nonzero elements of jacobian
         if fill:
             J[:,:,:] = 1.0
 
@@ -107,8 +84,9 @@ class EqualityConstraints:
             _in = np.hstack((V[:-1,:], V[1:,:], _L, self._h.reshape(-1,1)))
             H = self.ceq_hess_lamb(_in.T)
 
+            # used for determining nonzero elements of hessian
             if fill:
-                H[:,:,:] = 0.5
+                H[:,:,:] = 1.0
 
             # Reshape the lagrange multiplier vector
             hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)

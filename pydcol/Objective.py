@@ -38,6 +38,7 @@ class Objective:
         V = arg.reshape(self.N, self.X_dim+self.U_dim)
         hess_block = self.obj_hess_lambda(V.T)
 
+        # used for determining nonzero elements of hessian
         if fill:
             hess_block[:,:,:] = 1.0
 
