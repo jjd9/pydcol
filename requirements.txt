@@ -1,0 +1,6 @@
+ipyopt
+matplotlib
+numpy
+scipy
+symengine
+sympy
