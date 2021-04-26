@@ -44,7 +44,7 @@ if __name__ == "__main__":
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
 	# solve problem
-	sol_c = problem.solve(umax=u_max, bounds=bounds)
+	sol_c = problem.solve(umax=u_max, bounds=bounds, solver='scipy')
 
 	# evaluate solution
 	problem.evaluate()

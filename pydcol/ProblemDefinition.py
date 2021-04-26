@@ -1,5 +1,10 @@
 # third party imports
-import ipyopt
+try:
+	import ipyopt
+	_ipyopt_imported = True
+except:
+	_ipyopt_imported = False
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.integrate._ivp.common import num_jac
@@ -129,7 +134,8 @@ class CollocationProblem:
 			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan, solver)
 			self.is_solved = sol_opt.success
 		elif solver == "ipopt":
-			# raise(NotImplementedError("Ipop solver not implemented yet!"))			
+			if not _ipyopt_imported:
+				raise(ImportError("Ipyopt could not be imported! Please use scipy solver."))			
 			# setup variable bounds
 			nvar = self.N * len(bounds)
 			x_L = np.zeros(nvar)
