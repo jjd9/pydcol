@@ -40,8 +40,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 5
-	N_ = 20
-	# N_ = 100
+	N_ = 100
 
 	dist = -4.0 # distance traveled during swing-up maneuver
 
@@ -58,7 +57,7 @@ if __name__ == "__main__":
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
 	# solve problem
-	sol_c = problem.solve(umax=u_max, bounds=bounds)
+	sol_c = problem.solve(umax=u_max, bounds=bounds, solver='ipopt')
 
 	# evaluate solution
 	problem.evaluate()

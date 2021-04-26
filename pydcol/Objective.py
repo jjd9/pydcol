@@ -10,8 +10,6 @@ class Objective:
         self.X_dim = parent.X_dim
         self.U_dim = parent.U_dim
 
-        X_sym = parent.X_sym
-        U_sym = parent.U_sym
         all_vars = parent.all_vars
 
         self.obj_lambda = Lambdify(all_vars, Obj, order='F')

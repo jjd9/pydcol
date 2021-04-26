@@ -13,7 +13,7 @@ from sympy.matrices.dense import matrix_multiply_elementwise
 from .Objective import Objective
 from .EqualityConstraints import EqualityConstraints
 from .CollocMethods import *
-from .Solution import Solution, Solution_ipopt
+from .Solution import Solution
 
 class CollocationProblem:
 
@@ -126,7 +126,7 @@ class CollocationProblem:
 							options={'sparse_jacobian': True})
 
 			# convert scipy solution to our format
-			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan)
+			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan, solver)
 			self.is_solved = sol_opt.success
 		elif solver == "ipopt":
 			# raise(NotImplementedError("Ipop solver not implemented yet!"))			
@@ -190,11 +190,11 @@ class CollocationProblem:
 								 self.objective.eval, eval_grad_f, 
 								 eval_g, eval_jac_g, 
 								 eval_h)
-
-			_x, obj, status = nlp.solve(x0)
+			nlp.set(print_level=0)
+			sol_x, _, status = nlp.solve(x0)
 			# convert scipy solution to our format
-			self.sol_c = Solution_ipopt(_x, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan)
-			self.is_solved = status == 0
+			self.sol_c = Solution(sol_x, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan, solver)
+			self.is_solved = (status == 0) or (status == 1) # solver either succeeded or converged to acceptable accuracy
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))
 
