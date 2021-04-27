@@ -57,7 +57,7 @@ class CollocationProblem:
 		for i in range(len(self.all_vars)):
 			self.prev_dict[self.all_vars[i]] = self.prev_all_vars[i]
 
-		if self.colloc_method != TRAP:
+		if self.colloc_method in MIDPOINT_METHODS:
 			self.mid_all_vars = [Symbol(str(var)+"_mid") for var in self.all_vars]
 			self.mid_dict = {}
 			for i in range(len(self.all_vars)):
@@ -80,6 +80,14 @@ class CollocationProblem:
 			# Trapezoid method
 			for i in range(self.X_dim):
 				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - 0.5 * self.h * (ode[i] + ode[i].subs(self.prev_dict))]
+		elif colloc_method == EB:
+			# Euler Backward method
+			for i in range(self.X_dim):
+				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - self.h * ode[i]]
+		elif colloc_method == EF:
+			# Euler Forward method
+			for i in range(self.X_dim):
+				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - self.h * ode[i].subs(self.prev_dict)]
 		elif colloc_method == HERM:
 			# Hermite Simpson method
 			self.Ntilde=self.Ntilde*2-1 # actual number of node points due to addition of "mid" points
@@ -115,7 +123,7 @@ class CollocationProblem:
 			for i in range(self.N - 1):
 				xnew = self.X_start + (self.X_goal - self.X_start) * i / self.Ntilde
 				x0.append(xnew.tolist() + [u_mid])
-				if self.colloc_method != TRAP:
+				if self.N != self.Ntilde:
 					x0_mid.append(0.5*(np.array(x0[-1]) + np.array(x0[-2])))
 			x0 = np.array(x0 + x0_mid).ravel()
 

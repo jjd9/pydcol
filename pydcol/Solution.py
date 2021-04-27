@@ -41,7 +41,7 @@ class Solution:
 		self.u = V[:, X_dim:]
 
 		# convert discrete control to time-varying spline
-		if colloc_method == TRAP:
+		if colloc_method in [TRAP, EB, EF]:
 			self.u_t = interp1d(tspan, self.u.ravel(), kind='linear') # linear for trapezoid method
 		elif colloc_method == HERM:			
 			self.u_t = interp1d(tspan, self.u.ravel(), kind='quadratic') # quadratic for hermite simpson method
