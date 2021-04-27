@@ -29,8 +29,7 @@ class CollocationProblem:
 				X_start, 
 				X_goal, 
 				tspan,
-				colloc_method,
-				refine_mesh=False, u_guess=1.0):
+				colloc_method):
 
 		self.ode = ode
 		self.state_vars = state_vars
@@ -85,7 +84,7 @@ class CollocationProblem:
 			# Hermite Simpson method
 			self.Ntilde=self.Ntilde*2-1 # actual number of node points due to addition of "mid" points
 			for i in range(self.X_dim):
-				C_eq+=[state_vars[i].subs(self.mid_dict) - 0.5 * (state_vars[i] + state_vars[i].subs(self.prev_dict)) + (self.h/8.0) * (ode[i].subs(self.prev_dict) - ode[i])]
+				C_eq+=[state_vars[i].subs(self.mid_dict) - 0.5 * (state_vars[i] + state_vars[i].subs(self.prev_dict)) - (self.h/8.0) * (ode[i].subs(self.prev_dict) - ode[i])]
 			for i in range(self.X_dim):
 				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - (self.h/6.0) * (ode[i] + 4.0 * ode[i].subs(self.mid_dict) + ode[i].subs(self.prev_dict))]
 		elif colloc_method == RADAU:

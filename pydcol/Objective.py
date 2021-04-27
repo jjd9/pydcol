@@ -49,4 +49,5 @@ class Objective:
 
         for i in range(self.Ntilde):
             hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] = hess_block[:,:,i]
+
         return hess

@@ -64,7 +64,6 @@ class EqualityConstraints:
         _out = self.ceq_lambda(_in.T).T.ravel()
         initial_constr = (_X[0,:] - self.X_start).ravel()
         terminal_constr = (_X[-1,:] - self.X_goal).ravel()
-        Opt_dim = (self.X_dim + self.U_dim)
         return np.hstack((_out, initial_constr, terminal_constr))
 
     def jac(self, arg, fill=False):
@@ -94,7 +93,7 @@ class EqualityConstraints:
         jac[Ceq_dim * (self.N-1):Ceq_dim * (self.N-1) + self.X_dim, 
             :self.X_dim] = np.eye(self.X_dim)
         jac[Ceq_dim * (self.N-1) + self.X_dim:Ceq_dim * (self.N-1) + 2 * self.X_dim,
-            -(self.X_dim+self.U_dim):-self.U_dim] = np.eye(self.X_dim)
+            (self.N-1)*Opt_dim:(self.N-1)*Opt_dim+self.X_dim] = np.eye(self.X_dim)
 
         return jac
 

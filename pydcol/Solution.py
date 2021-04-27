@@ -5,6 +5,7 @@ Class for storing collocation solutions
 """
 
 # third party imports
+import numpy as np
 from scipy.interpolate import interp1d
 
 # pydcol imports
@@ -14,19 +15,30 @@ class Solution:
 
 	def __init__(self, sol, colloc_method, dims, tspan, solver):
 		(N, Ntilde, X_dim, U_dim) = dims
-		self.t = tspan
 
+		# save whether or not the optimization succeeded
 		if solver == 'ipopt':
-			# save whether or not the optimization succeeded
 			self.success = True
-			V = sol.reshape(Ntilde, X_dim+U_dim)
 		else:
-			# save whether or not the optimization succeeded
 			self.success = sol.success
-			V = sol.x.reshape(Ntilde, X_dim+U_dim)
 
-		self.x = V[:N, :X_dim]
-		self.u = V[:N, X_dim:X_dim+U_dim]
+		V = sol.x.reshape(Ntilde, X_dim+U_dim)
+
+		if N != Ntilde:
+			# put points in the right order
+			Vtemp = [V[0,:]]
+			tspan_temp = [tspan[0]]
+			for i in range(1,N):
+				Vtemp += [V[N+i-1,:]]
+				Vtemp += [V[i,:]]
+				tspan_temp+=[tspan[i-1] + 0.5*(tspan[i]-tspan[i-1])]
+				tspan_temp+=[tspan[i]]
+			V = np.array(Vtemp)
+			tspan = np.array(tspan_temp)
+
+		self.t = tspan
+		self.x = V[:, :X_dim]
+		self.u = V[:, X_dim:]
 
 		# convert discrete control to time-varying spline
 		if colloc_method == TRAP:
@@ -34,4 +46,4 @@ class Solution:
 		elif colloc_method == HERM:			
 			self.u_t = interp1d(tspan, self.u.ravel(), kind='quadratic') # quadratic for hermite simpson method
 		elif colloc_method == RADAU:			
-			self.u_t = interp1d(tspan, self.u.ravel(), kind='cubic') # quadratic for hermite simpson method
+			self.u_t = interp1d(tspan, self.u.ravel(), kind='cubic') # cubic for 3rd order radau method
