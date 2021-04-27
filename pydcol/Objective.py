@@ -7,6 +7,8 @@ from sympy.matrices.dense import matrix_multiply_elementwise
 class Objective:
     def __init__(self, parent, Obj):
         self.N = parent.N
+        self.Ntilde = parent.Ntilde
+
         self.X_dim = parent.X_dim
         self.U_dim = parent.U_dim
 
@@ -24,24 +26,27 @@ class Objective:
 
     # create callback for scipy
     def eval(self, arg):
-        V = arg.reshape(self.N, self.X_dim+self.U_dim)
+        # this works fine because order doesn't matter for our objective
+        V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
         return self.obj_lambda(V.T).sum()
 
     def jac(self, arg):
-        V = arg.reshape(self.N, self.X_dim+self.U_dim)
+        # this works fine because order doesn't matter for our objective
+        V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
         return self.obj_jac_lambda(V.T).squeeze().T.ravel()
 
     def hess(self, arg, fill=False):
+        # this works fine because order doesn't matter for our objective
         Sys_dim = self.X_dim + self.U_dim
-        Opt_dim = Sys_dim * self.N
+        Opt_dim = Sys_dim * self.Ntilde
         hess = np.zeros((Opt_dim, Opt_dim), dtype=np.float)
-        V = arg.reshape(self.N, self.X_dim+self.U_dim)
+        V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
         hess_block = self.obj_hess_lambda(V.T)
 
         # used for determining nonzero elements of hessian
         if fill:
             hess_block[:,:,:] = 1.0
 
-        for i in range(self.N):
+        for i in range(self.Ntilde):
             hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] = hess_block[:,:,i]
         return hess
