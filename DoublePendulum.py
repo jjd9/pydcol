@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = RADAU # HERM is really slow
+	colloc_method = RADAU
 
 	print("Initialize")
 	# physical parameters
