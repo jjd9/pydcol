@@ -87,7 +87,7 @@ class EqualityConstraints:
             J[:,:,:] = 1.0
 
         for i in range(self.N-1):
-            jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] = J[:2*Opt_dim,:2*Opt_dim,i].T
+            jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] = J[:2*Opt_dim,:,i].T
             if self.N != self.Ntilde:
                 jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] = J[2*Opt_dim:,:,i].T
         # initial and terminal constraint gradients are easy
