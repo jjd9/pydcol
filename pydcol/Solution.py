@@ -33,3 +33,5 @@ class Solution:
 			self.u_t = interp1d(tspan, self.u.ravel(), kind='linear') # linear for trapezoid method
 		elif colloc_method == HERM:			
 			self.u_t = interp1d(tspan, self.u.ravel(), kind='quadratic') # quadratic for hermite simpson method
+		elif colloc_method == RADAU:			
+			self.u_t = interp1d(tspan, self.u.ravel(), kind='cubic') # quadratic for hermite simpson method

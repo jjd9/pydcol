@@ -19,7 +19,7 @@ if __name__ == "__main__":
 	print("Initialize")
 
 	# collocation type
-	colloc_method = TRAP
+	colloc_method = RADAU
 
 	# physical parameters
 	l = 3.0

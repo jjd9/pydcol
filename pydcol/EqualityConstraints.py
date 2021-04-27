@@ -65,7 +65,7 @@ class EqualityConstraints:
         initial_constr = (_X[0,:] - self.X_start).ravel()
         terminal_constr = (_X[-1,:] - self.X_goal).ravel()
         Opt_dim = (self.X_dim + self.U_dim)
-        return np.hstack((_out[:self.N*Opt_dim], initial_constr, terminal_constr, _out[self.N*Opt_dim:]))
+        return np.hstack((_out, initial_constr, terminal_constr))
 
     def jac(self, arg, fill=False):
         if self.N == self.Ntilde:
@@ -94,7 +94,7 @@ class EqualityConstraints:
         jac[Ceq_dim * (self.N-1):Ceq_dim * (self.N-1) + self.X_dim, 
             :self.X_dim] = np.eye(self.X_dim)
         jac[Ceq_dim * (self.N-1) + self.X_dim:Ceq_dim * (self.N-1) + 2 * self.X_dim,
-            (Opt_dim * self.N)-(self.X_dim+self.U_dim):(Opt_dim * self.N)-self.U_dim] = np.eye(self.X_dim)
+            -(self.X_dim+self.U_dim):-self.U_dim] = np.eye(self.X_dim)
 
         return jac
 
@@ -104,12 +104,12 @@ class EqualityConstraints:
         else:
             if self.N == self.Ntilde:
                 V = arg_x.reshape(self.N, self.X_dim+self.U_dim)
-                _L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.X_dim)
+                _L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
                 _in = np.hstack((V[:-1,:], V[1:,:], _L, self._h.reshape(-1,1)))
             else:
                 V = arg_x[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
                 Vmid = arg_x[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
-                _L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.X_dim)
+                _L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
                 _in = np.hstack((V[:-1,:], Vmid, V[1:,:], _L, self._h.reshape(-1,1)))
 
             H = self.ceq_hess_lamb(_in.T)
