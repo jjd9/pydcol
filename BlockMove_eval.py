@@ -42,10 +42,11 @@ if __name__ == "__main__":
 	N_ = 3
 	tspan = np.linspace(t0_, tf_, N_)
 
+	obj = []
 	error = []
 	last_sol = None
 
-	for i in range(10):
+	for i in range(20):
 		# divide each segment of time by 2
 		new_tspan = [tspan[0]]
 		for j in range(1,tspan.size):
@@ -59,8 +60,8 @@ if __name__ == "__main__":
 
 		# solve problem
 		print("Start solve")
-		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='ipopt')
-
+		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='scipy')
+		obj.append(sol_c.obj)
 		if last_sol is not None:
 			prev_points = last_sol.x
 			cur_points = sol_c.x[::2,:]
@@ -72,6 +73,10 @@ if __name__ == "__main__":
 
 	plt.plot(error)
 	plt.show()
+	error = np.array(error)
+	print(-np.log(np.abs(error[:-1] - error[1:]))/np.log(2))
+	# obj = np.array(obj)
+	# print(-np.log(np.abs(obj[:-1] - obj[1:]))/np.log(2))
 
 	# evaluate solution
 	problem.evaluate()

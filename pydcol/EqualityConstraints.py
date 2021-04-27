@@ -8,6 +8,8 @@ from sympy.matrices.dense import matrix_multiply_elementwise
 # pydcol imports
 from .SymUtils import fast_jac, fast_half_hess
 
+from scipy.sparse import csr_matrix, lil_matrix
+
 class EqualityConstraints:
     def __init__(self, parent, C_eq):
         self.N = parent.N
@@ -51,6 +53,13 @@ class EqualityConstraints:
         else:
             self.is_linear = False
 
+        x0 = np.ones(self.N * (self.X_dim + self.U_dim))
+        self.jac_sparse_indices = self.jac(x0, fill=True)
+
+        ncon = self.eval(x0).size
+        lagrange = np.ones(ncon)
+        self.hess_sparse_indices = self.hess(x0, lagrange, fill=True)
+        
     def eval(self, arg):
         if self.N == self.Ntilde:
             V = arg.reshape(self.N, self.X_dim+self.U_dim)
@@ -96,10 +105,31 @@ class EqualityConstraints:
             (self.N-1)*Opt_dim:(self.N-1)*Opt_dim+self.X_dim] = np.eye(self.X_dim)
 
         return jac
+        Ceq_dim = self.X_dim
+        jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.N)
+
+        # used for determining nonzero elements of jacobian
+        if fill:
+            rows = []
+            cols = []
+            for i in range(self.N-1):
+                for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
+                    for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
+                        rows.append(j)
+                        cols.append(k)
+            # initial and terminal constraint gradients are easy
+            rows += np.arange(Ceq_dim * (self.N-1), Ceq_dim * (self.N-1) + self.X_dim).tolist()
+            rows += np.arange(Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0]).tolist()
+            cols += np.arange(0, self.X_dim).tolist()
+            cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
+            return rows, cols
+        else:
+            return csr_matrix((np.hstack((J.T.ravel(), np.ones(2*self.X_dim))),self.jac_sparse_indices),shape=jac_shape)
 
     def hess(self, arg_x, arg_v, fill=False):
-        if self.is_linear:
-            hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)
+        hess_shape = (arg_x.size, arg_x.size)
+        if self.is_linear and not fill:
+            return csr_matrix(hess_shape)
         else:
             if self.N == self.Ntilde:
                 V = arg_x.reshape(self.N, self.X_dim+self.U_dim)
@@ -114,12 +144,6 @@ class EqualityConstraints:
             H = self.ceq_hess_lamb(_in.T)
 
             # used for determining nonzero elements of hessian
-            if fill:
-                H[:,:,:] = 1.0
-
-            # Reshape the lagrange multiplier vector
-            hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)
-
             Opt_dim = (self.X_dim + self.U_dim)
 
             for i in range(self.N-1):
@@ -129,3 +153,24 @@ class EqualityConstraints:
                     hess[(i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] += H_temp[2*Opt_dim:,2*Opt_dim:]
 
         return hess
+            if fill:
+                idx = set()
+                # Reshape the lagrange multiplier vector
+                hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)
+                for i in range(self.N-1):
+                    for j in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
+                        for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
+                            idx.add((j, k))
+                idx = np.array(list(idx))
+                rows = idx[:,0]
+                cols = idx[:,1]
+                return rows, cols
+            else:
+                hess = lil_matrix((arg_x.size, arg_x.size), dtype=np.float)
+                for i in range(self.N-1):
+                    Htmp = H[:,:,i] + H[:,:,i].T
+                    for j in range(2*Opt_dim):
+                        for k in range(2*Opt_dim):
+                            hess[i*Opt_dim + j , i*Opt_dim + k] += Htmp[j,k]
+
+                return hess

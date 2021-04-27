@@ -184,15 +184,19 @@ class CollocationProblem:
 			g_U = np.zeros((ncon,))
 
 			# finding out which entries of the constraint jacobian and problem hessian are allways
-			# nonzero. 
-			ones_jac_g = self.equality_constr.jac(x0, fill=True)
-			eval_jac_g_sparsity_indices = np.column_stack(np.where(ones_jac_g != 0))
-			jac_g_idx = (eval_jac_g_sparsity_indices[:,0], eval_jac_g_sparsity_indices[:,1])
+			# nonzero.
+			jac_g_idx = self.equality_constr.jac(x0, fill=True)
 
 			lagrange = np.ones(ncon)
-			ones_h = self.objective.hess(x0, fill=True) + self.equality_constr.hess(x0, lagrange, fill=True)
-			eval_h_sparsity_indices = np.column_stack(np.where(ones_h != 0))
-			h_idx = (eval_h_sparsity_indices[:,0], eval_h_sparsity_indices[:,1])
+			h_obj_idx = self.objective.hess(x0, fill=True)
+			h_con_idx = self.equality_constr.hess(x0, lagrange, fill=True)
+			coords = set()			
+			for i in range(len(h_obj_idx[0])):
+				coords.add((h_obj_idx[0][i], h_obj_idx[1][i]))
+			for i in range(len(h_con_idx[0])):
+				coords.add((h_con_idx[0][i], h_con_idx[1][i]))
+			coords = np.array(list(coords))
+			h_idx = (coords[:,0], coords[:,1])
 
 			def eval_grad_f(x, out):
 				out[()] = self.objective.jac(x).ravel()
@@ -203,8 +207,7 @@ class CollocationProblem:
 				return out
 
 			def eval_jac_g(x, out):
-				J = self.equality_constr.jac(x)
-				out[()] = J[jac_g_idx[0], jac_g_idx[1]].ravel()
+				out[()] = self.equality_constr.jac(x).data
 				return out
 
 			def eval_h(x, lagrange, obj_factor, out):
@@ -212,7 +215,7 @@ class CollocationProblem:
 				Combined hessian for the problem. Used by ipopt.
 				"""
 				H = self.objective.hess(x) * obj_factor + self.equality_constr.hess(x, lagrange)
-				out[()] = H[h_idx[0], h_idx[1]].ravel()
+				out[()] = H.data
 				return out
 
 			nlp = ipyopt.Problem(nvar, x_L, x_U, 
@@ -222,13 +225,14 @@ class CollocationProblem:
 								 eval_g, eval_jac_g, 
 								 eval_h)
 			nlp.set(print_level=0)
-			sol_x, _, status = nlp.solve(x0)
+			sol_x, obj, status = nlp.solve(x0)
 			# convert scipy solution to our format
 			self.sol_c = Solution(sol_x, self.colloc_method, (self.Ntilde, self.X_dim, self.U_dim), self.tspan, solver)
 			self.is_solved = (status == 0) or (status == 1) # solver either succeeded or converged to acceptable accuracy
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))
 
+		self.sol_c.obj = self.objective.eval(np.hstack((self.sol_c.x, self.sol_c.u.reshape(-1,1))).ravel())
 		print("Done")
 		if self.is_solved:
 			print("Success :-)")

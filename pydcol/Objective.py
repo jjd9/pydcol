@@ -6,6 +6,7 @@ from sympy import Matrix, hessian, Symbol, symbols, lambdify
 from sympy.matrices.dense import matrix_multiply_elementwise
 
 from .SymUtils import fast_jac, fast_half_hess
+from scipy.sparse import csr_matrix
 
 class Objective:
     def __init__(self, parent, Obj):
@@ -43,6 +44,9 @@ class Objective:
             # hessian matrix ("hess")
             obj_hess = hessian(Obj, all_vars)
             self.obj_hess_lambda = Lambdify(all_vars, obj_hess, order='F')
+
+        x0 = np.ones(self.N * (self.X_dim + self.U_dim))
+        self.hess_sparse_indices = self.hess(x0, fill=True)        
 
     # create callback for scipy
     def eval(self, arg):
@@ -101,3 +105,19 @@ class Objective:
                 hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] += hess_block[:Sys_dim,:Sys_dim,i]
 
         return hess
+        Opt_dim = Sys_dim * self.N
+        V = arg.reshape(self.N, self.X_dim+self.U_dim)
+        hess_block = self.obj_hess_lambda(V.T)
+
+        # used for determining nonzero elements of hessian
+        if fill:
+            rows = []
+            cols = []
+            for i in range(self.N):
+                for j in range(i*Sys_dim, i*Sys_dim + Sys_dim):
+                    for k in range(i*Sys_dim, i*Sys_dim + Sys_dim):
+                        rows.append(j)
+                        cols.append(k)
+            return rows, cols
+        else:
+            return csr_matrix((hess_block.ravel(), self.hess_sparse_indices), shape = (Opt_dim, Opt_dim))
