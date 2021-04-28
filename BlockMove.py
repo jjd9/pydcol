@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = IMP_MID
+	colloc_method = TRAP
 
 	# define variables
 	x, v = symbols("x v")

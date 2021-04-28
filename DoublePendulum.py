@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = TRAP
+	colloc_method = RADAU
 
 	print("Initialize")
 	# physical parameters
