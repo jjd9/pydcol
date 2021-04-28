@@ -83,7 +83,5 @@ if __name__ == "__main__":
 
 		last_sol = deepcopy(sol_c)
 
-	plt.plot(error)
-	plt.show()
 	error = np.array(error)
-	print(-np.log(np.abs(error[:-1] - error[1:]))/np.log(2))
+	print(-np.log(np.abs(error[:-1]/error[1:]))/np.log(2))

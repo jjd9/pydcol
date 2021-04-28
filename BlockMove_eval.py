@@ -60,12 +60,12 @@ if __name__ == "__main__":
 
 		# solve problem
 		print("Start solve")
-		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='ipopt')
+		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='scipy')
 		obj.append(sol_c.obj)
 		if last_sol is not None:
 			prev_points = last_sol.x
 			cur_points = sol_c.x[::2,:]
-			err = np.linalg.norm(cur_points - prev_points,axis=1).max()
+			err = np.linalg.norm(cur_points - prev_points, axis=1).mean()
 			error.append(err)
 			print("Error: ", err)
 
@@ -74,4 +74,4 @@ if __name__ == "__main__":
 	plt.plot(error)
 	plt.show()
 	error = np.array(error)
-	print(-np.log(np.abs(error[:-1] - error[1:]))/np.log(2))
+	print(np.log(np.abs(error[:-1]/error[1:]))/np.log(2))
