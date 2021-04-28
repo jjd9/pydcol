@@ -71,10 +71,11 @@ class CollocationProblem:
 		# Scalar Objective
 		err = X - Matrix(X_goal)
 		state_error = err.multiply_elementwise(err)
-		# effort = U.multiply_elementwise(U)
-		# Obj = 0.1 * np.sum(state_error[:]) + np.sum(effort[:])
-		# Obj = np.sum(effort[:])
-		Obj = (self.h/6.0) * (self.control_vars[0] + 4 * self.control_vars[0].subs(self.mid_dict) + self.control_vars[0].subs(self.prev_dict))
+		effort = U.multiply_elementwise(U)
+		if self.colloc_method in MIDPOINT_METHODS:
+			Obj = (self.h/6.0) * (self.control_vars[0]**2 + 4.0 * self.control_vars[0].subs(self.mid_dict)**2 + self.control_vars[0].subs(self.prev_dict)**2)
+		else:
+			Obj = np.sum(effort[:])
 
 		# Equality Constraints
 		C_eq = []
