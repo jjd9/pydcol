@@ -57,11 +57,16 @@ class CollocationProblem:
 		for i in range(len(self.all_vars)):
 			self.prev_dict[self.all_vars[i]] = self.prev_all_vars[i]
 
-		if self.colloc_method in MIDPOINT_METHODS:
-			self.mid_all_vars = [Symbol(str(var)+"_mid") for var in self.all_vars]
-			self.mid_dict = {}
-			for i in range(len(self.all_vars)):
-				self.mid_dict[self.all_vars[i]] = self.mid_all_vars[i]
+		if self.colloc_method in [HERM]:
+			Obj = 0
+			for i in range(self.U_dim):
+				effort = self.control_vars[i]**2
+				Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+		elif self.colloc_method in [RADAU]:
+			Obj = 0
+			for i in range(self.U_dim):
+				effort = self.control_vars[i]**2
+				Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
 		else:
 			self.mid_all_vars = []	
 
