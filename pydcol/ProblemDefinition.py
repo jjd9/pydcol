@@ -29,8 +29,7 @@ class CollocationProblem:
 				X_start, 
 				X_goal, 
 				tspan,
-				colloc_method,
-				refine_mesh=False, u_guess=1.0):
+				colloc_method):
 
 		self.ode = ode
 		self.state_vars = state_vars
@@ -44,6 +43,7 @@ class CollocationProblem:
 
 		# Get variable dimensions
 		self.N = self.tspan.size
+		self.Ntilde=self.tspan.size
 		self.X_dim = len(state_vars)
 		self.U_dim = len(control_vars)
 		self.all_vars = state_vars + control_vars
@@ -51,32 +51,37 @@ class CollocationProblem:
 		self.h = Symbol("h")  # symbolic time step
 		self._h = self.tspan[1:] - self.tspan[:-1]  # time steps
 
-		# Create a set of "prev" variables for accessing values at previous time step
+		# Create a set of "prev" and "mid" variables for accessing values at previous time step
 		self.prev_all_vars = [Symbol(str(var)+"_prev") for var in self.all_vars]
-
-		self.mid_all_vars = [Symbol(str(var)+"_mid") for var in self.all_vars]
-
 		self.prev_dict = {}
 		for i in range(len(self.all_vars)):
 			self.prev_dict[self.all_vars[i]] = self.prev_all_vars[i]
 
-		# internal optimization variable maps
-		self.X_sym = Symbol("X")
-		self.U_sym = Symbol("U")
-		self.X_prev_sym = Symbol("Xprev")
-		self.U_prev_sym = Symbol("Uprev")
+		if self.colloc_method in [HERM]:
+			Obj = 0
+			for i in range(self.U_dim):
+				effort = self.control_vars[i]**2
+				Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+		elif self.colloc_method in [RADAU]:
+			Obj = 0
+			for i in range(self.U_dim):
+				effort = self.control_vars[i]**2
+				Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+		else:
+			self.mid_all_vars = []	
 
 		X = Matrix(state_vars)
 		U = Matrix(control_vars)
 
 		# Scalar Objective
-		err = X - Matrix(X_goal)
-		state_error = err.multiply_elementwise(err)
-		effort = U.multiply_elementwise(U)
-		Obj = 0.1 * np.sum(state_error[:]) + np.sum(effort[:])
-
-		print("Objective")
-		self.objective = Objective(self, Obj)
+		if self.colloc_method in MIDPOINT_METHODS:
+			Obj = 0
+			for i in range(self.U_dim):
+				effort = self.control_vars[i]**2
+				Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+		else:
+			effort = U.multiply_elementwise(U)
+			Obj = np.sum(effort[:])
 
 		# Equality Constraints
 		C_eq = []
@@ -84,15 +89,32 @@ class CollocationProblem:
 			# Trapezoid method
 			for i in range(self.X_dim):
 				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - 0.5 * self.h * (ode[i] + ode[i].subs(self.prev_dict))]
+		elif colloc_method == EB:
+			# Euler Backward method
+			for i in range(self.X_dim):
+				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - self.h * ode[i]]
+		elif colloc_method == EF:
+			# Euler Forward method
+			for i in range(self.X_dim):
+				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - self.h * ode[i].subs(self.prev_dict)]
 		elif colloc_method == HERM:
 			# Hermite Simpson method
-			mid_dict = {}
-			for j in range(len(control_vars)):
-				mid_dict[control_vars[j]] = 0.5 * (control_vars[j] + control_vars[j].subs(self.prev_dict))
+			self.Ntilde=self.Ntilde*2-1 # actual number of node points due to addition of "mid" points
 			for i in range(self.X_dim):
-				mid_dict[state_vars[i]] = 0.5 * (state_vars[i] + state_vars[i].subs(self.prev_dict)) + (self.h/8.0) * (ode[i].subs(self.prev_dict) - ode[i])
+				C_eq+=[state_vars[i].subs(self.mid_dict) - 0.5 * (state_vars[i] + state_vars[i].subs(self.prev_dict)) - (self.h/8.0) * (ode[i].subs(self.prev_dict) - ode[i])]
 			for i in range(self.X_dim):
-				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - (self.h/6.0) * (ode[i] + 4.0 * ode[i].subs(mid_dict) + ode[i].subs(self.prev_dict))]
+				C_eq += [state_vars[i] - state_vars[i].subs(self.prev_dict) - (self.h/6.0) * (ode[i] + 4.0 * ode[i].subs(self.mid_dict) + ode[i].subs(self.prev_dict))]
+		elif colloc_method == RADAU:
+			# Radau 3rd order
+			self.Ntilde=self.Ntilde*2-1 # actual number of node points due to addition of "mid" points
+			for i in range(self.X_dim):
+				C_eq+=[state_vars[i].subs(self.mid_dict) - state_vars[i].subs(self.prev_dict)-5.0/12.0*self.h*ode[i].subs(self.mid_dict)+1.0/12.0*self.h*ode[i]] # intermediate point residue
+			for i in range(self.X_dim):
+				C_eq+=[state_vars[i] - state_vars[i].subs(self.prev_dict)-3.0/4.0*self.h*ode[i].subs(self.mid_dict)-1.0/4.0*self.h*ode[i]] # end point residue
+              		
+		# Compile objective and equality constraints
+		print("Objective")
+		self.objective = Objective(self, Obj)
 
 		print("Equality constraints")
 		self.equality_constr = EqualityConstraints(self, Matrix(C_eq))
@@ -105,13 +127,16 @@ class CollocationProblem:
 			u_mid = 0.1
 			# Initialize optimization variables
 			x0 = [self.X_start.tolist() + [u_mid]]
+			x0_mid = []
 			for i in range(self.N - 1):
-				xnew = self.X_start + (self.X_goal - self.X_start) * i / self.N
+				xnew = self.X_start + (self.X_goal - self.X_start) * i / self.Ntilde
 				x0.append(xnew.tolist() + [u_mid])
-			x0 = np.array(x0).ravel()
+				if self.N != self.Ntilde:
+					x0_mid.append(0.5*(np.array(x0[-1]) + np.array(x0[-2])))
+			x0 = np.array(x0 + x0_mid).ravel()
 
 		if solver=='scipy':
-			_bounds = bounds * self.N
+			_bounds = bounds * self.Ntilde
 
 			# Problem constraints
 			constr_eq = NonlinearConstraint(self.equality_constr.eval,
@@ -131,17 +156,17 @@ class CollocationProblem:
 							options={'sparse_jacobian': True})
 
 			# convert scipy solution to our format
-			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan, solver)
+			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.Ntilde, self.X_dim, self.U_dim), self.tspan, solver)
 			self.is_solved = sol_opt.success
 		elif solver == "ipopt":
 			if not _ipyopt_imported:
 				raise(ImportError("Ipyopt could not be imported! Please use scipy solver."))			
 			# setup variable bounds
-			nvar = self.N * len(bounds)
+			nvar = self.Ntilde * len(bounds)
 			x_L = np.zeros(nvar)
 			x_U = np.zeros(nvar)
 			v_idx = 0
-			for i in range(self.N):
+			for i in range(self.Ntilde):
 				for b_pair in bounds:
 					if b_pair[0] is None:
 						x_L[v_idx] = -1e9
@@ -199,7 +224,7 @@ class CollocationProblem:
 			nlp.set(print_level=0)
 			sol_x, _, status = nlp.solve(x0)
 			# convert scipy solution to our format
-			self.sol_c = Solution(sol_x, self.colloc_method, (self.N, self.X_dim, self.U_dim), self.tspan, solver)
+			self.sol_c = Solution(sol_x, self.colloc_method, (self.Ntilde, self.X_dim, self.U_dim), self.tspan, solver)
 			self.is_solved = (status == 0) or (status == 1) # solver either succeeded or converged to acceptable accuracy
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))

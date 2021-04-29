@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = TRAP
+	colloc_method = RADAU
 
 	# define variables
 	x, v = symbols("x v")
@@ -29,12 +29,12 @@ if __name__ == "__main__":
 	ode = [v, u]
 
 	t0_ = 0
-	tf_ = 5
-	N_ = 10
+	tf_ = 1
+	N_ = 100
 	tspan = np.linspace(t0_, tf_, N_)
 
 	X_start = np.array([0, 0]) # arbitrary goal state
-	X_goal = np.array([10, 0]) # arbitrary goal state
+	X_goal = np.array([1, 0]) # arbitrary goal state
 
 	# bounds = [[lb_x, ub_x],[lb_v, ub_v],[lb_u, ub_u]]
 	u_max = 10
@@ -50,4 +50,4 @@ if __name__ == "__main__":
 	problem.evaluate()
 
 	# animate solution
-	draw_block(sol_c.x)
+	# draw_block(sol_c.x)

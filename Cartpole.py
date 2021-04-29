@@ -19,7 +19,7 @@ if __name__ == "__main__":
 	print("Initialize")
 
 	# collocation type
-	colloc_method = TRAP
+	colloc_method = HERM
 
 	# physical parameters
 	l = 3.0
@@ -40,7 +40,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 5
-	N_ = 100
+	N_ = 50
 
 	dist = -4.0 # distance traveled during swing-up maneuver
 
