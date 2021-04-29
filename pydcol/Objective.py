@@ -58,26 +58,31 @@ class Objective:
 
     def jac(self, arg):
         # this works fine because order doesn't matter for our objective
-        if self.colloc_method in MIDPOINT_METHODS:
+        if self.N != self.Ntilde:
             V = arg[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
             Vmid = arg[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
             _in = np.hstack((V[:-1,:], Vmid, V[1:,:],self._h.reshape(-1,1)))
-            J = self.obj_jac_lambda(_in.T).squeeze().T.ravel()
-            jac = np.zeros(self.Ntilde * (self.X_dim + self.U_dim))
-            # TODO : need to populate jac with for loop
+            J = self.obj_jac_lambda(_in.T).squeeze()
+            SysDim = self.X_dim + self.U_dim
+            jac = np.zeros(self.Ntilde * SysDim)
+            for i in range(self.N-1):
+                jac[i*SysDim:(i+1)*SysDim+SysDim] += J[:SysDim*2,i]
+                jac[(i+self.N)*SysDim:(i+self.N)*SysDim+SysDim] += J[SysDim*2:,i]
         else:
             _in = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
-            return self.obj_jac_lambda(_in.T).squeeze().T.ravel()
+            jac = self.obj_jac_lambda(_in.T).squeeze().T.ravel()
+
+        return jac
 
     def hess(self, arg, fill=False):
         # this works fine because order doesn't matter for our objective
         Sys_dim = self.X_dim + self.U_dim
         Opt_dim = Sys_dim * self.Ntilde
         hess = np.zeros((Opt_dim, Opt_dim), dtype=np.float)
-        if self.colloc_method in MIDPOINT_METHODS:
+        if self.N != self.Ntilde:
             V = arg[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
             Vmid = arg[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
-            _in = np.hstack((V[:-1,:], Vmid, V[1:,:]))
+            _in = np.hstack((V[:-1,:], Vmid, V[1:,:],self._h.reshape(-1,1)))
 
             hess_block = self.obj_hess_lambda(_in.T)
 
@@ -85,16 +90,14 @@ class Objective:
             if fill:
                 hess_block[:,:,:] = 1.0
 
-            # TODO: fix indexing in this for loop
             for i in range(self.N-1):
-                hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] += hess_block[:Sys_dim,:Sys_dim,i]
-                if self.N != self.Ntilde:
-                    hess[(i + self.N)*Sys_dim:(i + self.N)*Sys_dim + Sys_dim, (i + self.N)*Sys_dim:(i + self.N)*Sys_dim + Sys_dim] += hess_block[Sys_dim:,Sys_dim:,i]
+                Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
+                hess[i*Sys_dim:(i+1)*Sys_dim + Sys_dim, i*Sys_dim:(i+1)*Sys_dim + Sys_dim] += Htemp[:Sys_dim*2,:Sys_dim*2]
+                hess[(i + self.N)*Sys_dim:(i + self.N)*Sys_dim + Sys_dim, (i + self.N)*Sys_dim:(i + self.N)*Sys_dim + Sys_dim] += Htemp[Sys_dim*2:,Sys_dim*2:]
         else:
             V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
             hess_block = self.obj_hess_lambda(V.T)
             for i in range(self.N-1):
                 hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] += hess_block[:Sys_dim,:Sys_dim,i]
-
 
         return hess

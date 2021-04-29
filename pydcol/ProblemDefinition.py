@@ -94,8 +94,6 @@ class CollocationProblem:
 		elif colloc_method == HERM:
 			# Hermite Simpson method
 			self.Ntilde=self.Ntilde*2-1 # actual number of node points due to addition of "mid" points
-			for i in range(self.U_dim):
-				C_eq+=[control_vars[i].subs(self.mid_dict) - 0.5 * (control_vars[i] + control_vars[i].subs(self.prev_dict))]
 			for i in range(self.X_dim):
 				C_eq+=[state_vars[i].subs(self.mid_dict) - 0.5 * (state_vars[i] + state_vars[i].subs(self.prev_dict)) - (self.h/8.0) * (ode[i].subs(self.prev_dict) - ode[i])]
 			for i in range(self.X_dim):

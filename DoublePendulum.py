@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = HERM
+	colloc_method = TRAP
 
 	print("Initialize")
 	# physical parameters
