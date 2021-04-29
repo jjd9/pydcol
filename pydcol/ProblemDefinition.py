@@ -69,12 +69,13 @@ class CollocationProblem:
 		U = Matrix(control_vars)
 
 		# Scalar Objective
-		err = X - Matrix(X_goal)
-		state_error = err.multiply_elementwise(err)
-		effort = U.multiply_elementwise(U)
 		if self.colloc_method in MIDPOINT_METHODS:
-			Obj = (self.h/6.0) * (self.control_vars[0]**2 + 4.0 * self.control_vars[0].subs(self.mid_dict)**2 + self.control_vars[0].subs(self.prev_dict)**2)
+			Obj = 0
+			for i in range(self.U_dim):
+				effort = self.control_vars[i]**2
+				Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
 		else:
+			effort = U.multiply_elementwise(U)
 			Obj = np.sum(effort[:])
 
 		# Equality Constraints
@@ -102,11 +103,10 @@ class CollocationProblem:
 			# Radau 3rd order
 			self.Ntilde=self.Ntilde*2-1 # actual number of node points due to addition of "mid" points
 			for i in range(self.X_dim):
-				C_eq+=[state_vars[i].subs(self.mid_dict) - state_vars[i].subs(self.prev_dict)-5.0/12.0*self.h*ode[i].subs(self.mid_dict)+1.0/12.0*self.h*ode[i]] #intermediate point residue
+				C_eq+=[state_vars[i].subs(self.mid_dict) - state_vars[i].subs(self.prev_dict)-5.0/12.0*self.h*ode[i].subs(self.mid_dict)+1.0/12.0*self.h*ode[i]] # intermediate point residue
 			for i in range(self.X_dim):
-				C_eq+=[state_vars[i] - state_vars[i].subs(self.prev_dict)-3.0/4.0*self.h*ode[i].subs(self.mid_dict)-1.0/4.0*self.h*ode[i]] #intermediate point residue
+				C_eq+=[state_vars[i] - state_vars[i].subs(self.prev_dict)-3.0/4.0*self.h*ode[i].subs(self.mid_dict)-1.0/4.0*self.h*ode[i]] # end point residue
               		
-
 		# Compile objective and equality constraints
 		print("Objective")
 		self.objective = Objective(self, Obj)

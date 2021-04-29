@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = TRAP
+	colloc_method = HERM
 
 	print("Initialize")
 	# physical parameters
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 6
-	N_ = 100
+	N_ = 80
 
 	X_start = np.array([0, 0, 0, 0], dtype=np.float) # arbitrary goal state
 	X_goal = np.array([np.pi, 0, np.pi, 0], dtype=np.float) # arbitrary goal state
