@@ -19,7 +19,7 @@ if __name__ == "__main__":
 	print("Initialize")
 
 	# collocation type
-	colloc_method = HERM
+	colloc_method = RADAU
 
 	# physical parameters
 	l = 3.0
