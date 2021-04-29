@@ -91,9 +91,11 @@ class Objective:
             hess_block = self.obj_hess_lambda(_in.T)
 
             # used for determining nonzero elements of hessian
+            # TODO: setup sparse index generation
             if fill:
                 hess_block[:,:,:] = 1.0
 
+            # TODO: build and return sparse matrix
             for i in range(self.N-1):
                 Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
                 hess[i*Sys_dim:(i+1)*Sys_dim + Sys_dim, i*Sys_dim:(i+1)*Sys_dim + Sys_dim] += Htemp[:Sys_dim*2,:Sys_dim*2]
@@ -101,23 +103,15 @@ class Objective:
         else:
             V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
             hess_block = self.obj_hess_lambda(V.T)
-            for i in range(self.N-1):
-                hess[i*Sys_dim:i*Sys_dim + Sys_dim, i*Sys_dim:i*Sys_dim + Sys_dim] += hess_block[:Sys_dim,:Sys_dim,i]
-
-        return hess
-        Opt_dim = Sys_dim * self.N
-        V = arg.reshape(self.N, self.X_dim+self.U_dim)
-        hess_block = self.obj_hess_lambda(V.T)
-
-        # used for determining nonzero elements of hessian
-        if fill:
-            rows = []
-            cols = []
-            for i in range(self.N):
-                for j in range(i*Sys_dim, i*Sys_dim + Sys_dim):
-                    for k in range(i*Sys_dim, i*Sys_dim + Sys_dim):
-                        rows.append(j)
-                        cols.append(k)
-            return rows, cols
-        else:
-            return csr_matrix((hess_block.ravel(), self.hess_sparse_indices), shape = (Opt_dim, Opt_dim))
+            # used for determining nonzero elements of hessian
+            if fill:
+                rows = []
+                cols = []
+                for i in range(self.N):
+                    for j in range(i*Sys_dim, i*Sys_dim + Sys_dim):
+                        for k in range(i*Sys_dim, i*Sys_dim + Sys_dim):
+                            rows.append(j)
+                            cols.append(k)
+                return rows, cols
+            else:
+                return csr_matrix((hess_block.ravel(), self.hess_sparse_indices), shape = (Opt_dim, Opt_dim))

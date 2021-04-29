@@ -88,28 +88,11 @@ class EqualityConstraints:
         # jac should be Num_constraints x Opt_dim
         Opt_dim = (self.X_dim + self.U_dim)
         Ceq_dim = self.ncon
-        jac = np.zeros((Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde), dtype=np.float)
+        jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde)
 
         # used for determining nonzero elements of jacobian
         if fill:
-            J[:,:,:] = 1.0
-
-        for i in range(self.N-1):
-            jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] = J[:2*Opt_dim,:,i].T
-            if self.N != self.Ntilde:
-                jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] = J[2*Opt_dim:,:,i].T
-        # initial and terminal constraint gradients are easy
-        jac[Ceq_dim * (self.N-1):Ceq_dim * (self.N-1) + self.X_dim, 
-            :self.X_dim] = np.eye(self.X_dim)
-        jac[Ceq_dim * (self.N-1) + self.X_dim:Ceq_dim * (self.N-1) + 2 * self.X_dim,
-            (self.N-1)*Opt_dim:(self.N-1)*Opt_dim+self.X_dim] = np.eye(self.X_dim)
-
-        return jac
-        Ceq_dim = self.X_dim
-        jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.N)
-
-        # used for determining nonzero elements of jacobian
-        if fill:
+            # TODO: confirm these indices are still accurate
             rows = []
             cols = []
             for i in range(self.N-1):
@@ -124,7 +107,20 @@ class EqualityConstraints:
             cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
             return rows, cols
         else:
-            return csr_matrix((np.hstack((J.T.ravel(), np.ones(2*self.X_dim))),self.jac_sparse_indices),shape=jac_shape)
+            # TODO: build and return sparse matrix
+            jac = np.zeros(jac_shape, dtype=np.float)
+
+            for i in range(self.N-1):
+                jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] = J[:2*Opt_dim,:,i].T
+                if self.N != self.Ntilde:
+                    jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] = J[2*Opt_dim:,:,i].T
+            # initial and terminal constraint gradients are easy
+            jac[Ceq_dim * (self.N-1):Ceq_dim * (self.N-1) + self.X_dim, 
+                :self.X_dim] = np.eye(self.X_dim)
+            jac[Ceq_dim * (self.N-1) + self.X_dim:Ceq_dim * (self.N-1) + 2 * self.X_dim,
+                (self.N-1)*Opt_dim:(self.N-1)*Opt_dim+self.X_dim] = np.eye(self.X_dim)
+
+            return jac
 
     def hess(self, arg_x, arg_v, fill=False):
         hess_shape = (arg_x.size, arg_x.size)
@@ -146,17 +142,9 @@ class EqualityConstraints:
             # used for determining nonzero elements of hessian
             Opt_dim = (self.X_dim + self.U_dim)
 
-            for i in range(self.N-1):
-                H_temp = H[:,:,i] + H[:,:,i].T
-                hess[i*Opt_dim:(i+1)*Opt_dim + Opt_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] += H_temp[:2*Opt_dim,:2*Opt_dim]
-                if self.N != self.Ntilde:
-                    hess[(i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] += H_temp[2*Opt_dim:,2*Opt_dim:]
-
-        return hess
             if fill:
+                # TODO: confirm these indices are still accurate
                 idx = set()
-                # Reshape the lagrange multiplier vector
-                hess = np.zeros((arg_x.size, arg_x.size), dtype=np.float)
                 for i in range(self.N-1):
                     for j in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
                         for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
@@ -166,7 +154,15 @@ class EqualityConstraints:
                 cols = idx[:,1]
                 return rows, cols
             else:
+                # TODO: build and return sparse matrix
                 hess = lil_matrix((arg_x.size, arg_x.size), dtype=np.float)
+
+                for i in range(self.N-1):
+                    H_temp = H[:,:,i] + H[:,:,i].T
+                    hess[i*Opt_dim:(i+1)*Opt_dim + Opt_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] += H_temp[:2*Opt_dim,:2*Opt_dim]
+                    if self.N != self.Ntilde:
+                        hess[(i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] += H_temp[2*Opt_dim:,2*Opt_dim:]
+
                 for i in range(self.N-1):
                     Htmp = H[:,:,i] + H[:,:,i].T
                     for j in range(2*Opt_dim):
