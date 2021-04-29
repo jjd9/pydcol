@@ -78,7 +78,7 @@ class CollocationProblem:
 			Obj = 0
 			for i in range(self.U_dim):
 				effort = self.control_vars[i]**2
-				Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+				Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort)
 		else:
 			effort = U.multiply_elementwise(U)
 			Obj = np.sum(effort[:])
