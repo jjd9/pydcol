@@ -53,7 +53,7 @@ class EqualityConstraints:
         else:
             self.is_linear = False
 
-        x0 = np.ones(self.N * (self.X_dim + self.U_dim))
+        x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim))
         self.jac_sparse_indices = self.jac(x0, fill=True)
 
         ncon = self.eval(x0).size
@@ -92,7 +92,6 @@ class EqualityConstraints:
 
         # used for determining nonzero elements of jacobian
         if fill:
-            # TODO: confirm these indices are still accurate
             rows = []
             cols = []
             for i in range(self.N-1):
@@ -100,32 +99,35 @@ class EqualityConstraints:
                     for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
                         rows.append(j)
                         cols.append(k)
+                if self.N != self.Ntilde:
+                    for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
+                        for k in range((i + self.N)*Opt_dim, (i + self.N)*Opt_dim + Opt_dim):
+                            rows.append(j)
+                            cols.append(k)
             # initial and terminal constraint gradients are easy
             rows += np.arange(Ceq_dim * (self.N-1), Ceq_dim * (self.N-1) + self.X_dim).tolist()
             rows += np.arange(Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0]).tolist()
             cols += np.arange(0, self.X_dim).tolist()
-            cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
+            cols += np.arange(jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
             return rows, cols
         else:
-            # TODO: build and return sparse matrix
-            jac = np.zeros(jac_shape, dtype=np.float)
-
+            jac = []
             for i in range(self.N-1):
-                jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] = J[:2*Opt_dim,:,i].T
+                jac += J[:2*Opt_dim,:,i].T.ravel().tolist()
                 if self.N != self.Ntilde:
-                    jac[i*Ceq_dim:i*Ceq_dim + Ceq_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] = J[2*Opt_dim:,:,i].T
+                    jac += J[2*Opt_dim:,:,i].T.ravel().tolist()
             # initial and terminal constraint gradients are easy
-            jac[Ceq_dim * (self.N-1):Ceq_dim * (self.N-1) + self.X_dim, 
-                :self.X_dim] = np.eye(self.X_dim)
-            jac[Ceq_dim * (self.N-1) + self.X_dim:Ceq_dim * (self.N-1) + 2 * self.X_dim,
-                (self.N-1)*Opt_dim:(self.N-1)*Opt_dim+self.X_dim] = np.eye(self.X_dim)
-
+            jac += np.ones(2 * self.X_dim).tolist()
+            jac = csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
             return jac
 
     def hess(self, arg_x, arg_v, fill=False):
         hess_shape = (arg_x.size, arg_x.size)
-        if self.is_linear and not fill:
-            return csr_matrix(hess_shape)
+        if self.is_linear:
+            if fill:
+                return [], []
+            else:
+                return csr_matrix(hess_shape)
         else:
             if self.N == self.Ntilde:
                 V = arg_x.reshape(self.N, self.X_dim+self.U_dim)
@@ -143,30 +145,27 @@ class EqualityConstraints:
             Opt_dim = (self.X_dim + self.U_dim)
 
             if fill:
-                # TODO: confirm these indices are still accurate
                 idx = set()
                 for i in range(self.N-1):
                     for j in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
                         for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
                             idx.add((j, k))
+                    if self.N != self.Ntilde:
+                        for j in range(Opt_dim):
+                            for k in range(Opt_dim):
+                                idx.add(((i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k))
                 idx = np.array(list(idx))
                 rows = idx[:,0]
                 cols = idx[:,1]
                 return rows, cols
             else:
-                # TODO: build and return sparse matrix
                 hess = lil_matrix((arg_x.size, arg_x.size), dtype=np.float)
-
                 for i in range(self.N-1):
-                    H_temp = H[:,:,i] + H[:,:,i].T
-                    hess[i*Opt_dim:(i+1)*Opt_dim + Opt_dim, i*Opt_dim:(i+1)*Opt_dim + Opt_dim] += H_temp[:2*Opt_dim,:2*Opt_dim]
-                    if self.N != self.Ntilde:
-                        hess[(i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim, (i + self.N)*Opt_dim:(i + self.N)*Opt_dim + Opt_dim] += H_temp[2*Opt_dim:,2*Opt_dim:]
-
-                for i in range(self.N-1):
-                    Htmp = H[:,:,i] + H[:,:,i].T
+                    Htemp = H[:,:,i] + H[:,:,i].T
                     for j in range(2*Opt_dim):
                         for k in range(2*Opt_dim):
-                            hess[i*Opt_dim + j , i*Opt_dim + k] += Htmp[j,k]
-
+                            hess[i*Opt_dim+j, i*Opt_dim+k]+=Htemp[j,k]
+                    for j in range(Opt_dim):
+                        for k in range(Opt_dim):
+                            hess[(i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k]+=Htemp[2*Opt_dim+j,2*Opt_dim+k]
                 return hess

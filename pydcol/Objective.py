@@ -6,7 +6,7 @@ from sympy import Matrix, hessian, Symbol, symbols, lambdify
 from sympy.matrices.dense import matrix_multiply_elementwise
 
 from .SymUtils import fast_jac, fast_half_hess
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, lil_matrix
 
 class Objective:
     def __init__(self, parent, Obj):
@@ -45,12 +45,11 @@ class Objective:
             obj_hess = hessian(Obj, all_vars)
             self.obj_hess_lambda = Lambdify(all_vars, obj_hess, order='F')
 
-        x0 = np.ones(self.N * (self.X_dim + self.U_dim))
+        x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim))
         self.hess_sparse_indices = self.hess(x0, fill=True)        
 
     # create callback for scipy
     def eval(self, arg):
-        # this works fine because order doesn't matter for our objective
         if self.colloc_method in MIDPOINT_METHODS:
             V = arg[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
             Vmid = arg[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
@@ -61,7 +60,6 @@ class Objective:
         return self.obj_lambda(_in.T).sum()
 
     def jac(self, arg):
-        # this works fine because order doesn't matter for our objective
         if self.N != self.Ntilde:
             V = arg[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
             Vmid = arg[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
@@ -79,10 +77,8 @@ class Objective:
         return jac
 
     def hess(self, arg, fill=False):
-        # this works fine because order doesn't matter for our objective
         Sys_dim = self.X_dim + self.U_dim
         Opt_dim = Sys_dim * self.Ntilde
-        hess = np.zeros((Opt_dim, Opt_dim), dtype=np.float)
         if self.N != self.Ntilde:
             V = arg[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
             Vmid = arg[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
@@ -91,15 +87,28 @@ class Objective:
             hess_block = self.obj_hess_lambda(_in.T)
 
             # used for determining nonzero elements of hessian
-            # TODO: setup sparse index generation
             if fill:
-                hess_block[:,:,:] = 1.0
-
-            # TODO: build and return sparse matrix
-            for i in range(self.N-1):
-                Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
-                hess[i*Sys_dim:(i+1)*Sys_dim + Sys_dim, i*Sys_dim:(i+1)*Sys_dim + Sys_dim] += Htemp[:Sys_dim*2,:Sys_dim*2]
-                hess[(i + self.N)*Sys_dim:(i + self.N)*Sys_dim + Sys_dim, (i + self.N)*Sys_dim:(i + self.N)*Sys_dim + Sys_dim] += Htemp[Sys_dim*2:,Sys_dim*2:]
+                idx = set()
+                for i in range(self.N-1):
+                    for j in range(2*Sys_dim):
+                        for k in range(2*Sys_dim):
+                            idx.add((i*Sys_dim+j, i*Sys_dim+k))
+                    for j in range(Sys_dim):
+                        for k in range(Sys_dim):
+                            idx.add(((i + self.N)*Sys_dim+j, (i + self.N)*Sys_dim+k))
+                idx = np.array(list(idx))
+                return idx[:,0], idx[:,1]
+            else:
+                hess = lil_matrix((arg.size, arg.size), dtype=np.float)
+                for i in range(self.N-1):
+                    Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
+                    for j in range(2*Sys_dim):
+                        for k in range(2*Sys_dim):
+                            hess[i*Sys_dim+j, i*Sys_dim+k]+=Htemp[j,k]
+                    for j in range(Sys_dim):
+                        for k in range(Sys_dim):
+                            hess[(i + self.N)*Sys_dim+j, (i + self.N)*Sys_dim+k]+=Htemp[2*Sys_dim+j,2*Sys_dim+k]
+                return hess
         else:
             V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
             hess_block = self.obj_hess_lambda(V.T)
