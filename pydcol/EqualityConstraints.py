@@ -108,7 +108,10 @@ class EqualityConstraints:
             rows += np.arange(Ceq_dim * (self.N-1), Ceq_dim * (self.N-1) + self.X_dim).tolist()
             rows += np.arange(Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0]).tolist()
             cols += np.arange(0, self.X_dim).tolist()
-            cols += np.arange(jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
+            if self.N != self.Ntilde:
+                cols += np.arange(jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
+            else:
+                cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
             return rows, cols
         else:
             jac = []
@@ -118,8 +121,7 @@ class EqualityConstraints:
                     jac += J[2*Opt_dim:,:,i].T.ravel().tolist()
             # initial and terminal constraint gradients are easy
             jac += np.ones(2 * self.X_dim).tolist()
-            jac = csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
-            return jac
+            return csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
 
     def hess(self, arg_x, arg_v, fill=False):
         hess_shape = (arg_x.size, arg_x.size)
@@ -165,7 +167,8 @@ class EqualityConstraints:
                     for j in range(2*Opt_dim):
                         for k in range(2*Opt_dim):
                             hess[i*Opt_dim+j, i*Opt_dim+k]+=Htemp[j,k]
-                    for j in range(Opt_dim):
-                        for k in range(Opt_dim):
-                            hess[(i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k]+=Htemp[2*Opt_dim+j,2*Opt_dim+k]
+                    if self.N != self.Ntilde:
+                        for j in range(Opt_dim):
+                            for k in range(Opt_dim):
+                                hess[(i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k]+=Htemp[2*Opt_dim+j,2*Opt_dim+k]
                 return hess
