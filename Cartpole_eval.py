@@ -1,45 +1,57 @@
 """
 
-Block-move example
+Cartpole example
 
 Authors: John D'Angelo, Shreyas Sudhaman
 
 """
 
-from copy import deepcopy
 import numpy as np
 from sympy import symbols
 from sympy import sin, cos
 from sympy import Matrix, lambdify
+from copy import deepcopy
 
-from pydcol.Animator import draw_block
+from pydcol.Animator import draw_cartpole
 from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
 
-import matplotlib.pyplot as plt
-
 if __name__ == "__main__":
+	print("Initialize")
 
+	# collocation type
 	colloc_method = TRAP
 
+	# physical parameters
+	l = 3.0
+	m1 = 3.0 # cart mass
+	m2 = 0.5 # mass at end of pole
+	g = 9.81
+
 	# define variables
-	x, v = symbols("x v")
+	q1, q2, q1_dot, q2_dot = symbols("q1 q2 q1_dot q2_dot")
 	u = symbols("u")
-	state_vars = [x, v]
+	state_vars = [q1, q2, q1_dot, q2_dot]
 	control_vars = [u]
 
 	# Given system equations
-	ode = [v, u]
-
-	X_start = np.array([0, 0]) # arbitrary goal state
-	X_goal = np.array([10, 0]) # arbitrary goal state
-	# bounds = [[lb_x, ub_x],[lb_v, ub_v],[lb_u, ub_u]]
-	u_max = 10
-	bounds = [[None,None],[None,None],[-u_max, u_max]]
+	q1_d2dot = (l*m2*sin(q2)*q2_dot**2 + u + m2*g*cos(q2)*sin(q2))/(m1 + m2*(1-cos(q2)**2))
+	q2_d2dot = - (l*m2*cos(q2)*sin(q2)*q2_dot**2 + u*cos(q2) + (m1+m2)*g*sin(q2))/(l*m1 + l*m2*(1-cos(q2)**2))
+	ode = [q1_dot, q2_dot, q1_d2dot, q2_d2dot]
 
 	t0_ = 0
 	tf_ = 5
 	N_ = 3
+
+	dist = -4.0 # distance traveled during swing-up maneuver
+
+	X_start = np.array([0, 0, 0, 0]) # arbitrary goal state
+	X_goal = np.array([dist, np.pi, 0, 0]) # arbitrary goal state
+
+	# bounds
+	u_max = 100
+	dist_min, dist_max = -10, 10
+	bounds = [[dist_min, dist_max],[-2*np.pi,2*np.pi],[-100,100],[-100,100],[-u_max,u_max]]
 	tspan = np.linspace(t0_, tf_, N_)
 
 	obj = []
@@ -60,18 +72,16 @@ if __name__ == "__main__":
 
 		# solve problem
 		print("Start solve")
-		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='scipy')
+		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='ipopt')
 		obj.append(sol_c.obj)
 		if last_sol is not None:
 			prev_points = last_sol.x
 			cur_points = sol_c.x[::2,:]
-			err = np.linalg.norm(cur_points - prev_points, axis=1).mean()
+			err = np.linalg.norm(cur_points - prev_points,axis=1).max()
 			error.append(err)
 			print("Error: ", err)
 
 		last_sol = deepcopy(sol_c)
 
-	plt.plot(error)
-	plt.show()
 	error = np.array(error)
-	print(np.log(np.abs(error[:-1]/error[1:]))/np.log(2))
+	print(-np.log(np.abs(error[:-1]/error[1:]))/np.log(2))

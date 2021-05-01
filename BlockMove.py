@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = RADAU
+	colloc_method = TRAP
 
 	# define variables
 	x, v = symbols("x v")
@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 1
-	N_ = 100
+	N_ = 10
 	tspan = np.linspace(t0_, tf_, N_)
 
 	X_start = np.array([0, 0]) # arbitrary goal state
