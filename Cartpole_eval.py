@@ -1,6 +1,6 @@
 """
 
-Cartpole example
+Cartpole example with state and control error analysis
 
 Authors: John D'Angelo, Shreyas Sudhaman
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
 
 		# solve problem
 		print("Start solve")
-		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='ipopt')
+		sol_c = problem.solve(bounds=bounds, solver='scipy')
 		obj.append(sol_c.obj)
 		if last_sol is not None:
 			prev_points = last_sol.x

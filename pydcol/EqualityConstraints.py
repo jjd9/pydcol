@@ -1,14 +1,18 @@
+"""
+Equality constraint definition.
+
+Authors: John D'Angelo, Shreyas Sudhaman
+Date: 05/01/2021
+"""
+
 # third party imports
-from re import X
 import numpy as np
+from scipy.sparse import csr_matrix, lil_matrix
 from symengine import Lambdify
-from sympy import Matrix, hessian, Symbol, symbols, lambdify
-from sympy.matrices.dense import matrix_multiply_elementwise
+from sympy import Matrix
 
 # pydcol imports
 from .SymUtils import fast_jac, fast_half_hess
-
-from scipy.sparse import csr_matrix, lil_matrix
 
 class EqualityConstraints:
     def __init__(self, parent, C_eq):
@@ -33,34 +37,42 @@ class EqualityConstraints:
         self.ceq_lambda = Lambdify(prev_all_vars+mid_all_vars+all_vars+[self.h], C_eq, order='F')
 
         # jacobian matrix ("jac")
-        print("Jacobian")
         ceq_jac = Matrix(fast_jac(C_eq, prev_all_vars+all_vars + mid_all_vars)).T
-        print("Jacobian lambdify")
         self.ceq_jac_lambda = Lambdify(prev_all_vars+mid_all_vars+all_vars+[self.h], ceq_jac, order='F')
 
         # Hessian Matrix ("hess")
-        print("Hessian")
         # lagrange multipliers
         self.ncon = len(C_eq)
         lamb = Matrix(["lambda" + str(i) for i in range(self.ncon)]).reshape(self.ncon, 1)
         ceq_hess = Matrix(fast_half_hess((C_eq.T * lamb)[0], prev_all_vars + all_vars + mid_all_vars))
-        print("Hessian lambdify")
         self.ceq_hess_lamb = Lambdify(prev_all_vars+mid_all_vars+all_vars+list(lamb)+[self.h], ceq_hess, order='F', cse=True, backend='llvm')
 
-        # linear if hessian is all zero
+        # linear if symbolic hessian is all zero
         if len(ceq_hess.free_symbols) == 0:
             self.is_linear = True
         else:
             self.is_linear = False
 
         x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim))
-        self.jac_sparse_indices = self.jac(x0, fill=True)
+        self.jac_sparse_indices = self.jac(x0, return_sparse_indices=True)
 
         ncon = self.eval(x0).size
         lagrange = np.ones(ncon)
-        self.hess_sparse_indices = self.hess(x0, lagrange, fill=True)
+        self.hess_sparse_indices = self.hess(x0, lagrange, return_sparse_indices=True)
         
     def eval(self, arg):
+        """
+        Evaluate equality constraints for given value of optimization variable.
+
+        Parameters
+        ----------
+        arg -- optimization variables as 1-D numpy array. 
+
+        Returns
+        -------
+        vector of equality constraint residuals as 1-D numpy array. 
+        """
+
         if self.N == self.Ntilde:
             V = arg.reshape(self.N, self.X_dim+self.U_dim)
             _X = V[:,:self.X_dim]
@@ -75,7 +87,22 @@ class EqualityConstraints:
         terminal_constr = (_X[-1,:] - self.X_goal).ravel()
         return np.hstack((_out, initial_constr, terminal_constr))
 
-    def jac(self, arg, fill=False):
+    def jac(self, arg: np.array, return_sparse_indices: bool = False):
+        """
+        Evaluate jacobian of equality constraints for given value of optimization variable.
+
+        Parameters
+        ----------
+        arg -- optimization variables as 1-D numpy array. 
+        return_sparse_indices -- if True return a tuple of the row, column indices of the non-zero entries of the jacobian matrix. if False, return the actual jacobian.
+
+        Returns
+        -------
+        jacobian matrix of equality constraint residuals as a scipy sparse matrix (specifically a csr_matrix). 
+        OR
+        tuple of (row,col) indices of non-zero elements of jacobian matrix
+        """
+
         if self.N == self.Ntilde:
             V = arg.reshape(self.Ntilde, self.X_dim+self.U_dim)
             _in = np.hstack((V[:-1,:], V[1:,:],self._h.reshape(-1,1)))
@@ -91,7 +118,7 @@ class EqualityConstraints:
         jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde)
 
         # used for determining nonzero elements of jacobian
-        if fill:
+        if return_sparse_indices:
             rows = []
             cols = []
             for i in range(self.N-1):
@@ -123,10 +150,25 @@ class EqualityConstraints:
             jac += np.ones(2 * self.X_dim).tolist()
             return csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
 
-    def hess(self, arg_x, arg_v, fill=False):
+    def hess(self, arg_x, arg_v, return_sparse_indices=False):
+        """
+        Evaluate hessian of equality constraints for given value of optimization variable.
+
+        Parameters
+        ----------
+        arg -- optimization variables as 1-D numpy array. 
+        return_sparse_indices -- if True return a tuple of the row, column indices of the non-zero entries of the hessian matrix. if False, return the actual hessian.
+
+        Returns
+        -------
+        hessian matrix of equality constraint residuals as a scipy sparse matrix (specifically a lil_matrix). 
+        OR
+        tuple of (row,col) indices of non-zero elements of hessian matrix
+        """
+
         hess_shape = (arg_x.size, arg_x.size)
         if self.is_linear:
-            if fill:
+            if return_sparse_indices:
                 return [], []
             else:
                 return csr_matrix(hess_shape)
@@ -146,7 +188,7 @@ class EqualityConstraints:
             # used for determining nonzero elements of hessian
             Opt_dim = (self.X_dim + self.U_dim)
 
-            if fill:
+            if return_sparse_indices:
                 idx = set()
                 for i in range(self.N-1):
                     for j in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):

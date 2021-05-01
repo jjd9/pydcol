@@ -1,6 +1,6 @@
 """
 
-Block-move example
+Block-move example with state and control error analysis.
 
 Authors: John D'Angelo, Shreyas Sudhaman
 
@@ -9,10 +9,7 @@ Authors: John D'Angelo, Shreyas Sudhaman
 from copy import deepcopy
 import numpy as np
 from sympy import symbols
-from sympy import sin, cos
-from sympy import Matrix, lambdify
 
-from pydcol.Animator import draw_block
 from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
 
@@ -32,13 +29,13 @@ if __name__ == "__main__":
 	ode = [v, u]
 
 	X_start = np.array([0, 0]) # arbitrary goal state
-	X_goal = np.array([10, 0]) # arbitrary goal state
+	X_goal = np.array([1, 0]) # arbitrary goal state
 	# bounds = [[lb_x, ub_x],[lb_v, ub_v],[lb_u, ub_u]]
 	u_max = 10
 	bounds = [[None,None],[None,None],[-u_max, u_max]]
 
 	t0_ = 0
-	tf_ = 5
+	tf_ = 1
 	N_ = 3
 	tspan = np.linspace(t0_, tf_, N_)
 
@@ -60,7 +57,7 @@ if __name__ == "__main__":
 
 		# solve problem
 		print("Start solve")
-		sol_c = problem.solve(umax=u_max, bounds=bounds, solver='scipy')
+		sol_c = problem.solve(bounds=bounds, solver='scipy')
 		obj.append(sol_c.obj)
 		if last_sol is not None:
 			prev_points = last_sol.x

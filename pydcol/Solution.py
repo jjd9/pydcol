@@ -2,6 +2,8 @@
 
 Class for storing collocation solutions
 
+Authors: John D'Angelo, Shreyas Sudhaman
+Date: 05/01/2021
 """
 
 # third party imports

@@ -1,9 +1,12 @@
 """
 
-Utility functions for dealing with symbolic operations
+Fast symbolic operations implemented using symengine.
 
+Authors: John D'Angelo, Shreyas Sudhaman
+Date: 05/01/2021
 """
 
+# third party imports
 from symengine import zeros, diff
 
 def fast_jac(expr, vs):

@@ -1,5 +1,8 @@
 """
 Enums representing set of supported collocation methods
+
+Authors: John D'Angelo, Shreyas Sudhaman
+Date: 05/01/2021
 """
 
 TRAP = 0
