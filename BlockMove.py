@@ -17,7 +17,7 @@ from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
 
-	colloc_method = TRAP
+	colloc_method = HERM
 
 	# define variables
 	x, v = symbols("x v")
@@ -28,10 +28,8 @@ if __name__ == "__main__":
 	# Given system equations
 	ode = [v, u]
 
-	t0_ = 0
-	tf_ = 1
 	N_ = 10
-	tspan = np.linspace(t0_, tf_, N_)
+	tf_bound = [1, 5]
 
 	X_start = np.array([0, 0]) # arbitrary goal state
 	X_goal = np.array([1, 0]) # arbitrary goal state
@@ -41,7 +39,7 @@ if __name__ == "__main__":
 	bounds = [[None,None],[None,None],[-u_max, u_max]]
 
 	# Define problem
-	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tf_bound, N_, colloc_method)
 
 	# solve problem
 	sol_c = problem.solve(bounds=bounds, solver='scipy')

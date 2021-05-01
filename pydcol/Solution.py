@@ -15,7 +15,7 @@ from .CollocMethods import *
 
 class Solution:
 
-	def __init__(self, sol, colloc_method, dims, tspan, solver):
+	def __init__(self, sol, colloc_method, dims, solver):
 		(N, Ntilde, X_dim, U_dim) = dims
 
 		# save whether or not the optimization succeeded
@@ -24,7 +24,8 @@ class Solution:
 		else:
 			self.success = sol.success
 
-		V = sol.x.reshape(Ntilde, X_dim+U_dim)
+		tspan = np.linspace(0, sol.x[-1], N)
+		V = sol.x[:-1].reshape(Ntilde, X_dim+U_dim)
 
 		if N != Ntilde:
 			# put points in the right order

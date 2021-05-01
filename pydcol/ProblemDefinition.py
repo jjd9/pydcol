@@ -1,6 +1,10 @@
 """
 
-Definition of direct collocation problem. 
+Definition of direct collocation problem as the following nonlinear program:
+
+min w1*tf + w2*integral(u^2, from t0..tf)
+x,u
+s.t. x[0] = x0, x[-1] = xf
 
 Authors: John D'Angelo, Shreyas Sudhaman
 Date: 05/01/2021
@@ -34,7 +38,8 @@ class CollocationProblem:
 				ode, 
 				X_start, 
 				X_goal, 
-				tspan,
+				tf_bound,
+				N,
 				colloc_method):
 
 		self.ode = ode
@@ -42,20 +47,20 @@ class CollocationProblem:
 		self.control_vars = control_vars
 		self.ode_fun = lambdify(self.state_vars+self.control_vars, Matrix(self.ode), 'numpy')
 		self.colloc_method = colloc_method
-		self.tspan = tspan
+		self.tf_bound = tf_bound
 
 		self.X_start = X_start
 		self.X_goal = X_goal
 
 		# Get variable dimensions
-		self.N = self.tspan.size
-		self.Ntilde=self.tspan.size
+		self.N = int(N)
+		self.Ntilde= int(N)
 		self.X_dim = len(state_vars)
 		self.U_dim = len(control_vars)
 		self.all_vars = state_vars + control_vars
 
-		self.h = Symbol("h")  # symbolic time step
-		self._h = self.tspan[1:] - self.tspan[:-1]  # time steps
+		self.tf = Symbol("tf")  # symbolic final time
+		self.h = 1/self.tf
 
 		# Create a set of "prev" and "mid" variables for accessing values at previous time step
 		self.prev_all_vars = [Symbol(str(var)+"_prev") for var in self.all_vars]
@@ -141,6 +146,7 @@ class CollocationProblem:
 
 		if x0 is None:
 			# Initialize optimization variables
+			tf_0 = (self.tf_bound[0]+self.tf_bound[1])/2.0
 			if bounds is not None:
 				u_bounds = bounds[self.X_dim:]
 				u_mid = [(lb+ub)/2.0 for lb,ub in u_bounds]
@@ -153,10 +159,12 @@ class CollocationProblem:
 				x0.append(xnew.tolist() + u_mid)
 				if self.N != self.Ntilde:
 					x0_mid.append(0.5*(np.array(x0[-1]) + np.array(x0[-2])))
-			x0 = np.array(x0 + x0_mid).ravel()
+			x0 = np.array(x0 + x0_mid + [tf_0]).ravel()
 
 		if solver=='scipy':
 			_bounds = bounds * self.Ntilde
+			_bounds += [self.tf_bound]
+			
 
 			# Problem constraints
 			constr_eq = NonlinearConstraint(self.equality_constr.eval,
@@ -176,7 +184,7 @@ class CollocationProblem:
 							options={'sparse_jacobian': True})
 
 			# convert scipy solution to our format
-			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.Ntilde, self.X_dim, self.U_dim), self.tspan, solver)
+			self.sol_c = Solution(sol_opt, self.colloc_method, (self.N, self.Ntilde, self.X_dim, self.U_dim), solver)
 			self.is_solved = sol_opt.success
 		elif solver == "ipopt":
 			if not _ipyopt_imported:
