@@ -300,7 +300,7 @@ class CollocationProblem:
 		axs[0].plot([], [],color='k',label='IVP solution')
 		axs[0].legend()
 
-		U_t = np.array(self.sol_c.u_t(sol_ivp.t)).reshape(-1, self.U_dim)
+		U_t = np.array(self.sol_c.u_t(sol_ivp.t)).T.reshape(-1, self.U_dim)
 		for j in range(self.U_dim):
 			axs[1].plot(tspan, U[:,j],'o',color=colors[j])
 			axs[1].plot(sol_ivp.t, U_t[:,j],color=colors[j])
