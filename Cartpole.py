@@ -60,7 +60,7 @@ if __name__ == "__main__":
 	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
 	# evaluate solution
-	problem.evaluate()
+	problem.evaluate(ivp_method='Radau')
 
 	# animate solution
 	draw_cartpole(sol_c.x, [l, m1, m2, g])

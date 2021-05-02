@@ -234,9 +234,9 @@ class CollocationProblem:
 
 			def eval_h(x, lagrange, obj_factor, out):
 				"""
-				Combined hessian for the problem. Used by ipopt.
+				Combined hessian for the problem.
 				"""
-				H = self.objective.hess(x) * (obj_factor+1e-12) + self.equality_constr.hess(x, lagrange)
+				H = self.objective.hess(x) * (obj_factor) + self.equality_constr.hess(x, lagrange)
 				out[()] = H.data
 				return out
 
@@ -244,8 +244,8 @@ class CollocationProblem:
 								 ncon, g_L, g_U, 
 								 jac_g_idx, h_idx, 
 								 self.objective.eval, eval_grad_f, 
-								 eval_g, eval_jac_g, 
-								 eval_h)
+								 eval_g, eval_jac_g, eval_h)
+
 			# nlp.set(print_level=0)
 			sol_x, obj, status = nlp.solve(x0)
 			# convert scipy solution to our format

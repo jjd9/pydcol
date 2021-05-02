@@ -54,11 +54,17 @@ class EqualityConstraints:
 			self.is_linear = False
 
 		x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim))
-		self.jac_sparse_indices = self.jac(x0, return_sparse_indices=True)
-
 		ncon = self.eval(x0).size
 		lagrange = np.ones(ncon)
+		self.jac_sparse_indices = self.jac(x0, return_sparse_indices=True)
+
 		self.hess_sparse_indices = self.hess(x0, lagrange, return_sparse_indices=True)
+		self.hess_shape = (x0.size, x0.size)
+		self.hess_size = len(self.hess_sparse_indices[0])
+		self.hess_dict = dict()
+		for i in range(self.hess_size):
+			key = (self.hess_sparse_indices[0][i],self.hess_sparse_indices[1][i])
+			self.hess_dict[key] = i
 
 	def eval(self, arg):
 		"""
@@ -183,7 +189,7 @@ class EqualityConstraints:
 				_L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
 				_in = np.hstack((V[:-1,:], Vmid, V[1:,:], _L, self._h.reshape(-1,1)))
 
-			H = self.ceq_hess_lamb(_in.T)
+			H = self.ceq_hess_lamb(_in.T)+ 1e-9
 
 			# used for determining nonzero elements of hessian
 			Opt_dim = (self.X_dim + self.U_dim)
@@ -203,14 +209,14 @@ class EqualityConstraints:
 				cols = idx[:,1]
 				return rows, cols
 			else:
-				hess = lil_matrix((arg_x.size, arg_x.size), dtype=np.float)
+				hess = np.zeros(self.hess_size, dtype=float)
 				for i in range(self.N-1):
 					Htemp = H[:,:,i] + H[:,:,i].T
 					for j in range(2*Opt_dim):
 						for k in range(2*Opt_dim):
-							hess[i*Opt_dim+j, i*Opt_dim+k]+=Htemp[j,k]
+							hess[self.hess_dict[(i*Opt_dim+j, i*Opt_dim+k)]]+=Htemp[j,k]
 					if self.N != self.Ntilde:
 						for j in range(Opt_dim):
 							for k in range(Opt_dim):
-								hess[(i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k]+=Htemp[2*Opt_dim+j,2*Opt_dim+k]
-				return hess
+								hess[self.hess_dict[((i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k)]]+=Htemp[2*Opt_dim+j,2*Opt_dim+k]
+				return csr_matrix((hess, self.hess_sparse_indices), shape = self.hess_shape)

@@ -11,7 +11,6 @@ from sympy import symbols
 from sympy import sin, cos
 from sympy import Matrix, lambdify
 
-from pydcol.Animator import draw_block
 from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
 
 	# solve problem
 	print("Solve")
-	sol_c = problem.solve(bounds=bounds, solver='scipy')
+	sol_c = problem.solve(bounds=bounds, solver='ipopt')
 
 	# evaluate solution
 	problem.evaluate()
