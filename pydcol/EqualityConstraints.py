@@ -53,9 +53,6 @@ class EqualityConstraints:
 		else:
 			self.is_linear = False
 
-		import numdifftools as nd
-		import matplotlib.pyplot as plt
-
 		x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim) + 1)
 		ncon = self.eval(x0).size
 		lagrange = np.ones(ncon)

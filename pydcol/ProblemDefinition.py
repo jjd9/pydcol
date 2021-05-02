@@ -193,7 +193,7 @@ class CollocationProblem:
 			if not _ipyopt_imported:
 				raise(ImportError("Ipyopt could not be imported! Please use scipy solver."))			
 			# setup variable bounds
-			nvar = self.Ntilde * len(bounds)
+			nvar = self.Ntilde * len(bounds) + 1
 			x_L = np.zeros(nvar)
 			x_U = np.zeros(nvar)
 			v_idx = 0
@@ -208,6 +208,8 @@ class CollocationProblem:
 					else:
 						x_U[v_idx] = b_pair[1]						
 					v_idx += 1
+			x_L[v_idx] = self.tf_bound[0]
+			x_U[v_idx] = self.tf_bound[1]
 
 			# setup equality constraints
 			ncon = self.equality_constr.eval(x0).size
@@ -247,7 +249,7 @@ class CollocationProblem:
 				"""
 				Combined hessian for the problem. Used by ipopt.
 				"""
-				H = self.objective.hess(x) * obj_factor + self.equality_constr.hess(x, lagrange)
+				H = self.objective.hess(x) * (obj_factor) + self.equality_constr.hess(x, lagrange)
 				out[()] = H.data
 				return out
 
