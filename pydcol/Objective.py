@@ -153,7 +153,7 @@ class Objective:
 			Vmid = arg_x[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
 			_in = np.hstack((V[:-1,:], Vmid, V[1:,:], _tf))
 
-			hess_block = self.obj_hess_lambda(_in.T)
+			hess_block = self.obj_hess_lambda(_in.T) + 1e-9
 
 			# used for determining nonzero elements of hessian
 			if return_sparse_indices:
@@ -207,7 +207,7 @@ class Objective:
 		else:
 			_tf = arg_tf * np.ones((self.N, 1))
 			_in = np.hstack((arg_x.reshape(self.Ntilde, self.X_dim+self.U_dim), _tf)) 
-			hess_block = self.obj_hess_lambda(_in.T)
+			hess_block = self.obj_hess_lambda(_in.T) + 1e-9
 			# used for determining nonzero elements of hessian
 			if return_sparse_indices:
 				idx = set()

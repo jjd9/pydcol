@@ -262,7 +262,7 @@ class CollocationProblem:
 			nlp.set(print_level=0)
 			sol_x, obj, status = nlp.solve(x0)
 			# convert scipy solution to our format
-			self.sol_c = Solution(sol_x, self.colloc_method, (self.Ntilde, self.X_dim, self.U_dim), self.tspan, solver)
+			self.sol_c = Solution(sol_x, self.colloc_method, (self.N, self.Ntilde, self.X_dim, self.U_dim), solver)
 			self.is_solved = (status == 0) or (status == 1) # solver either succeeded or converged to acceptable accuracy
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))

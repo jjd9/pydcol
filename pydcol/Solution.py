@@ -17,16 +17,19 @@ class Solution:
 
 	def __init__(self, sol, colloc_method, dims, solver):
 		(N, Ntilde, X_dim, U_dim) = dims
-		self.opt_x = sol.x.copy()
 
 		# save whether or not the optimization succeeded
 		if solver == 'ipopt':
 			self.success = True
+			self.opt_x = sol.copy()
+			V = sol[:-1].reshape(Ntilde, X_dim+U_dim)
+			tspan = np.linspace(0, sol[-1], N)
 		else:
 			self.success = sol.success
+			self.opt_x = sol.x.copy()
+			V = sol.x[:-1].reshape(Ntilde, X_dim+U_dim)
+			tspan = np.linspace(0, sol.x[-1], N)
 
-		tspan = np.linspace(0, sol.x[-1], N)
-		V = sol.x[:-1].reshape(Ntilde, X_dim+U_dim)
 
 		if N != Ntilde:
 			# put points in the right order

@@ -231,7 +231,7 @@ class EqualityConstraints:
 				_L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
 				_in = np.hstack((V[:-1,:], Vmid, V[1:,:], _L, _tf))
 
-			H = self.ceq_hess_lamb(_in.T)
+			H = self.ceq_hess_lamb(_in.T) + 1e-9
 
 			# used for determining nonzero elements of hessian
 			Sys_dim = (self.X_dim + self.U_dim)

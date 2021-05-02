@@ -28,7 +28,7 @@ if __name__ == "__main__":
 	# Given system equations
 	ode = [v, u]
 
-	N_ = 100
+	N_ = 10
 	tf_bound = [1, 5]
 
 	X_start = np.array([0, 0]) # arbitrary goal state
@@ -42,7 +42,7 @@ if __name__ == "__main__":
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tf_bound, N_, colloc_method)
 
 	# solve problem
-	sol_c = problem.solve(bounds=bounds, solver='scipy')
+	sol_c = problem.solve(bounds=bounds, solver='ipopt')
 
 	# evaluate solution
 	problem.evaluate()

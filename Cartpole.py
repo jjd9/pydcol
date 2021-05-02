@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
 	# solve problem
 	print("Solve")
-	sol_c = problem.solve(bounds=bounds, solver='scipy')
+	sol_c = problem.solve(bounds=bounds, solver='ipopt')
 
 	# evaluate solution
 	problem.evaluate()
