@@ -6,6 +6,7 @@ Date: 05/01/2021
 """
 
 # third party imports
+import IPython
 import numpy as np
 from scipy.sparse import csr_matrix, lil_matrix
 from symengine import Lambdify
@@ -52,13 +53,16 @@ class EqualityConstraints:
 		else:
 			self.is_linear = False
 
+		import numdifftools as nd
+		import matplotlib.pyplot as plt
+
 		x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim) + 1)
 		self.jac_sparse_indices = self.jac(x0, return_sparse_indices=True)
-
 		ncon = self.eval(x0).size
 		lagrange = np.ones(ncon)
 		self.hess_sparse_indices = self.hess(x0, lagrange, return_sparse_indices=True)
-		
+
+
 	def eval(self, arg):
 		"""
 		Evaluate equality constraints for given value of optimization variable.
@@ -117,12 +121,13 @@ class EqualityConstraints:
 			V = arg_x[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
 			Vmid = arg_x[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
 			_in = np.hstack((V[:-1,:], Vmid, V[1:,:], _tf))
+
 		J = self.ceq_jac_lambda(_in.T)
 
-		# jac should be Num_constraints x Opt_dim
+		# jac should be Number constraints x Number optimization variables
 		Opt_dim = (self.X_dim + self.U_dim)
-		Ceq_dim = self.ncon
-		jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde)
+		Ceq_dim = self.ncon		
+		jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde + 1)
 
 		# used for determining nonzero elements of jacobian
 		if return_sparse_indices:
@@ -133,6 +138,8 @@ class EqualityConstraints:
 					for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
 						rows.append(j)
 						cols.append(k)
+					rows.append(j)
+					cols.append(jac_shape[1]-1)
 				if self.N != self.Ntilde:
 					for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
 						for k in range((i + self.N)*Opt_dim, (i + self.N)*Opt_dim + Opt_dim):
@@ -143,19 +150,38 @@ class EqualityConstraints:
 			rows += np.arange(Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0]).tolist()
 			cols += np.arange(0, self.X_dim).tolist()
 			if self.N != self.Ntilde:
-				cols += np.arange(jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
+				cols += np.arange(jac_shape[1]-1-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-1-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
 			else:
-				cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
+				cols += np.arange(jac_shape[1]-1-(self.X_dim+self.U_dim), jac_shape[1]-1-self.U_dim).tolist()
 			return rows, cols
 		else:
-			jac = []
+			jac = lil_matrix(jac_shape, dtype=float)
+
 			for i in range(self.N-1):
-				jac += J[:2*Opt_dim,:,i].T.ravel().tolist()
+				for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
+					for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
+						jac[j,k]+=J[k-i*Opt_dim,j-i*Ceq_dim,i]
+					jac[j,jac_shape[1]-1]+=J[-1,j-i*Ceq_dim,i]
 				if self.N != self.Ntilde:
-					jac += J[2*Opt_dim:,:,i].T.ravel().tolist()
-			# initial and terminal constraint gradients are easy
-			jac += np.ones(2 * self.X_dim).tolist()
-			return csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
+					for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
+						for k in range((i + self.N)*Opt_dim, (i + self.N)*Opt_dim + Opt_dim):
+							jac[j,k]+=J[2*Opt_dim + k-(i + self.N)*Opt_dim,j-i*Ceq_dim,i]
+
+			for j in range(Ceq_dim * (self.N-1), Ceq_dim * (self.N-1) + self.X_dim):
+				jac[j,j-Ceq_dim * (self.N-1)] = 1.0
+
+			if self.N != self.Ntilde:
+				col_range = (jac_shape[1]-1-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-1-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim)
+			else:
+				col_range = (jac_shape[1]-1-(self.X_dim+self.U_dim), jac_shape[1]-1-self.U_dim)
+
+			row_range = (Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0])
+
+			for j in range(self.X_dim):
+				jac[j+row_range[0],j+col_range[0]] = 1.0
+
+			return jac
+
 
 	def hess(self, arg, arg_v, return_sparse_indices=False):
 		"""
@@ -197,31 +223,58 @@ class EqualityConstraints:
 			H = self.ceq_hess_lamb(_in.T)
 
 			# used for determining nonzero elements of hessian
-			Opt_dim = (self.X_dim + self.U_dim)
+			Sys_dim = (self.X_dim + self.U_dim)
+
+			if self.N != self.Ntilde:
+				hdim = 3*Sys_dim+1
+			else:
+				hdim = 2*Sys_dim+1
 
 			if return_sparse_indices:
 				idx = set()
 				for i in range(self.N-1):
-					for j in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
-						for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
-							idx.add((j, k))
-					if self.N != self.Ntilde:
-						for j in range(Opt_dim):
-							for k in range(Opt_dim):
-								idx.add(((i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k))
+					for j in range(hdim):
+						for k in range(j, hdim):							
+							if j < 2*Sys_dim and k < 2*Sys_dim: # A
+								idx.add((i*Sys_dim+j, i*Sys_dim+k))
+								idx.add((i*Sys_dim+k, i*Sys_dim+j))
+							elif self.N != self.Ntilde and j >= 2*Sys_dim and j < 3*Sys_dim and k >= 2*Sys_dim and k < 3*Sys_dim: # B
+								idx.add(((i + self.N)*Sys_dim+j-2*Sys_dim, (i + self.N)*Sys_dim+k-2*Sys_dim))
+								idx.add(((i + self.N)*Sys_dim+k-2*Sys_dim, (i + self.N)*Sys_dim+j-2*Sys_dim))
+							elif self.N != self.Ntilde and j < 2*Sys_dim and k >= 2*Sys_dim and k < 3*Sys_dim: # C == D
+								idx.add((i*Sys_dim+j, (i + self.N)*Sys_dim+k-2*Sys_dim))
+								idx.add(((i + self.N)*Sys_dim+k-2*Sys_dim, i*Sys_dim+j))
+							elif j < 2*Sys_dim and k == hdim-1: # E==F
+								idx.add((i*Sys_dim+j, arg.size-1))
+								idx.add((arg.size-1, i*Sys_dim+j))
+							elif self.N != self.Ntilde and j >= 2*Sys_dim and k == hdim-1: # E==F
+								idx.add(((i + self.N)*Sys_dim+j-2*Sys_dim, arg.size-1))
+								idx.add((arg.size-1, (i + self.N)*Sys_dim+j-2*Sys_dim))
+							else:
+								idx.add((arg.size-1,arg.size-1))
 				idx = np.array(list(idx))
-				rows = idx[:,0]
-				cols = idx[:,1]
-				return rows, cols
+				return idx[:,0], idx[:,1]
 			else:
 				hess = lil_matrix((arg.size, arg.size), dtype=np.float)
 				for i in range(self.N-1):
 					Htemp = H[:,:,i] + H[:,:,i].T
-					for j in range(2*Opt_dim):
-						for k in range(2*Opt_dim):
-							hess[i*Opt_dim+j, i*Opt_dim+k]+=Htemp[j,k]
-					if self.N != self.Ntilde:
-						for j in range(Opt_dim):
-							for k in range(Opt_dim):
-								hess[(i + self.N)*Opt_dim+j, (i + self.N)*Opt_dim+k]+=Htemp[2*Opt_dim+j,2*Opt_dim+k]
+					for j in range(hdim):
+						for k in range(j, hdim):
+							if j < 2*Sys_dim and k < 2*Sys_dim: # A
+								hess[i*Sys_dim+j, i*Sys_dim+k]+=Htemp[j,k]
+								hess[i*Sys_dim+k, i*Sys_dim+j]+=Htemp[k,j]
+							elif self.N != self.Ntilde and j >= 2*Sys_dim and j < 3*Sys_dim and k >= 2*Sys_dim and k < 3*Sys_dim: # B
+								hess[(i + self.N)*Sys_dim+j-2*Sys_dim, (i + self.N)*Sys_dim+k-2*Sys_dim]+=Htemp[j,k]
+								hess[(i + self.N)*Sys_dim+k-2*Sys_dim, (i + self.N)*Sys_dim+j-2*Sys_dim]+=Htemp[k,j]
+							elif self.N != self.Ntilde and j < 2*Sys_dim and k >= 2*Sys_dim and k < 3*Sys_dim: # C == D
+								hess[i*Sys_dim+j, (i + self.N)*Sys_dim+k-2*Sys_dim]+=Htemp[j,k]
+								hess[(i + self.N)*Sys_dim+k-2*Sys_dim, i*Sys_dim+j]+=Htemp[k,j]
+							elif j < 2*Sys_dim and k == hdim-1: # E==F
+								hess[i*Sys_dim+j, arg.size-1]+=Htemp[j,k]
+								hess[arg.size-1, i*Sys_dim+j]+=Htemp[k,j]
+							elif self.N != self.Ntilde and j >= 2*Sys_dim and k == hdim-1: # E==F
+								hess[(i + self.N)*Sys_dim+j-2*Sys_dim, arg.size-1]+=Htemp[j,k]
+								hess[arg.size-1, (i + self.N)*Sys_dim+j-2*Sys_dim]+=Htemp[k,j]
+							else:
+								hess[arg.size-1,arg.size-1]+=Htemp[j,k]
 				return hess

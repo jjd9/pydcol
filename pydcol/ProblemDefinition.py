@@ -60,7 +60,7 @@ class CollocationProblem:
 		self.all_vars = state_vars + control_vars
 
 		self.tf = Symbol("tf")  # symbolic final time
-		self.h = 1/self.tf
+		self.h = self.tf / self.N
 
 		# Create a set of "prev" and "mid" variables for accessing values at previous time step
 		self.prev_all_vars = [Symbol(str(var)+"_prev") for var in self.all_vars]
@@ -159,12 +159,11 @@ class CollocationProblem:
 				x0.append(xnew.tolist() + u_mid)
 				if self.N != self.Ntilde:
 					x0_mid.append(0.5*(np.array(x0[-1]) + np.array(x0[-2])))
-			x0 = np.array(x0 + x0_mid + [tf_0]).ravel()
+			x0 = np.array(np.array(x0 + x0_mid).ravel().tolist() + [tf_0])
 
 		if solver=='scipy':
 			_bounds = bounds * self.Ntilde
 			_bounds += [self.tf_bound]
-			
 
 			# Problem constraints
 			constr_eq = NonlinearConstraint(self.equality_constr.eval,
@@ -262,7 +261,7 @@ class CollocationProblem:
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))
 
-		self.sol_c.obj = self.objective.eval(np.hstack((self.sol_c.x, self.sol_c.u.reshape(-1,1))).ravel())
+		self.sol_c.obj = self.objective.eval(self.sol_c.opt_x)
 		print("Done")
 		if self.is_solved:
 			print("Success :-)")

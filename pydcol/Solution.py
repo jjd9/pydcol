@@ -17,6 +17,7 @@ class Solution:
 
 	def __init__(self, sol, colloc_method, dims, solver):
 		(N, Ntilde, X_dim, U_dim) = dims
+		self.opt_x = sol.x.copy()
 
 		# save whether or not the optimization succeeded
 		if solver == 'ipopt':

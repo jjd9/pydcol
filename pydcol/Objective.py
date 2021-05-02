@@ -53,8 +53,8 @@ class Objective:
 			self.obj_hess_lambda = Lambdify(all_vars+[self.tf], obj_hess, order='F')
 
 		x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim) + 1)
-		# self.hess_sparse_indices = self.hess(x0, return_sparse_indices=True)        
-		self.hess_sparse_indices = self.hess(x0)        
+		self.hess_sparse_indices = self.hess(x0, return_sparse_indices=True)        
+
 
 	# create callback for scipy
 	def eval(self, arg: np.array)->float:
@@ -112,7 +112,12 @@ class Objective:
 		else:
 			_tf = arg_tf * np.ones((self.N, 1))
 			_in = np.hstack((arg_x.reshape(self.Ntilde, self.X_dim+self.U_dim), _tf)) 
-			jac = self.obj_jac_lambda(_in.T).squeeze().T.ravel()
+			J = self.obj_jac_lambda(_in.T).squeeze()
+			SysDim = self.X_dim + self.U_dim
+			jac = np.zeros(self.N * SysDim + 1)
+			for i in range(self.N):
+				jac[i*SysDim:i*SysDim+SysDim] += J[:SysDim,i]
+				jac[-1] += J[-1,i]
 
 		return jac
 
@@ -196,17 +201,37 @@ class Objective:
 				return hess
 		else:
 			_tf = arg_tf * np.ones((self.N, 1))
-			_in = np.hstack((arg.reshape(self.Ntilde, self.X_dim+self.U_dim), _tf)) 
+			_in = np.hstack((arg_x.reshape(self.Ntilde, self.X_dim+self.U_dim), _tf)) 
 			hess_block = self.obj_hess_lambda(_in.T)
 			# used for determining nonzero elements of hessian
 			if return_sparse_indices:
-				rows = []
-				cols = []
+				idx = set()
 				for i in range(self.N):
-					for j in range(i*Sys_dim, i*Sys_dim + Sys_dim):
-						for k in range(i*Sys_dim, i*Sys_dim + Sys_dim):
-							rows.append(j)
-							cols.append(k)
-				return rows, cols
+					for j in range(Sys_dim+1):
+						for k in range(j, Sys_dim+1):
+							if j < Sys_dim and k < Sys_dim: # A								
+								idx.add((i*Sys_dim+j, i*Sys_dim+k))
+								idx.add((i*Sys_dim+k, i*Sys_dim+j))
+							elif j < Sys_dim and k == Sys_dim: # E==F
+								idx.add((i*Sys_dim+j, arg.size-1))
+								idx.add((arg.size-1, i*Sys_dim+j))
+							else:
+								idx.add((arg.size-1,arg.size-1))
+
+				idx = np.array(list(idx))
+				return idx[:,0], idx[:,1]
 			else:
-				return csr_matrix((hess_block.ravel(), self.hess_sparse_indices), shape = (Opt_dim, Opt_dim))
+				hess = lil_matrix((arg.size, arg.size), dtype=np.float)
+				for i in range(self.N):
+					Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
+					for j in range(Sys_dim+1):
+						for k in range(j, Sys_dim+1):
+							if j < Sys_dim and k < Sys_dim: # A
+								hess[i*Sys_dim+j, i*Sys_dim+k]+=Htemp[j,k]
+								hess[i*Sys_dim+k, i*Sys_dim+j]+=Htemp[k,j]
+							elif j < Sys_dim and k == Sys_dim: # E==F
+								hess[i*Sys_dim+j, arg.size-1]+=Htemp[j,k]
+								hess[arg.size-1, i*Sys_dim+j]+=Htemp[k,j]
+							else:
+								hess[arg.size-1,arg.size-1]+=Htemp[j,k]
+				return hess
