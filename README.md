@@ -1,13 +1,6 @@
 # pydcol
 This is a repo for ME 397 Numerical methods project
 
-# To Do
+The goal of pydcol is to solve optimal control problems for ode systems.
 
-High priority:
-- [x] Extend our problem definition to make use of intermediate points for integration scheme's like hermite simpson and radau.
-- [x] Evaluate order of accuracy of solution.
-- [ ] Implement our own adaptive, implicit ivp solver.
-
-Low priority:
-- [ ] More examples!
-- [x] Add interface to ipopt
+The specific problem pydcol solves for a given system is to find an open-loop control trajectory connecting an initial system state to a final system state over a fixed time interval. The control trajectory provided by pydcol minimizes the control effort which is the integral of the sum of all the control inputs squared.
