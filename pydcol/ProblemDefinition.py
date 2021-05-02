@@ -95,7 +95,7 @@ class CollocationProblem:
 			Obj_u = np.sum(effort[:])
 		
 		Obj_t = self.tf
-		w1 = 0.5
+		w1 = 0.1
 		w2 = 1.0 - w1
 		Obj = w1 * Obj_u + w2 * Obj_t
 
@@ -165,7 +165,6 @@ class CollocationProblem:
 				if self.N != self.Ntilde:
 					x0_mid.append(0.5*(np.array(x0[-1]) + np.array(x0[-2])))
 			x0 = np.array(np.array(x0 + x0_mid).ravel().tolist() + [tf_0])
-
 		if solver=='scipy':
 			_bounds = bounds * self.Ntilde
 			_bounds += [self.tf_bound]

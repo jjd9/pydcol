@@ -155,9 +155,7 @@ class EqualityConstraints:
 				cols += np.arange(jac_shape[1]-1-(self.X_dim+self.U_dim), jac_shape[1]-1-self.U_dim).tolist()
 			return rows, cols
 		else:
-			# jac = lil_matrix(jac_shape, dtype=float)
-			jac_size = len(self.jac_sparse_indices[0])
-			jac = csr_matrix((np.zeros(jac_size),self.jac_sparse_indices), shape=jac_shape, dtype=float)
+			jac = np.zeros(jac_shape, dtype=float)
 
 			for i in range(self.N-1):
 				for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
@@ -257,10 +255,7 @@ class EqualityConstraints:
 				idx = np.array(list(idx))
 				return idx[:,0], idx[:,1]
 			else:
-				# hess = lil_matrix((arg.size, arg.size), dtype=np.float)
-				hess_shape = (arg.size, arg.size)
-				hess_size = len(self.hess_sparse_indices[0])
-				hess = csr_matrix((np.zeros(hess_size),self.hess_sparse_indices), shape=hess_shape, dtype=float)
+				hess = np.zeros((arg.size, arg.size), dtype=np.float)
 
 				for i in range(self.N-1):
 					Htemp = H[:,:,i] + H[:,:,i].T

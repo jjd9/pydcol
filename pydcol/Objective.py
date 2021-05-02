@@ -176,10 +176,7 @@ class Objective:
 				idx = np.array(list(idx))
 				return idx[:,0], idx[:,1]
 			else:
-				hess_shape = (arg.size, arg.size)
-				hess_size = len(self.hess_sparse_indices[0])
-				hess = csr_matrix((np.zeros(hess_size),self.hess_sparse_indices), shape=hess_shape, dtype=float)
-				# hess = lil_matrix((arg.size, arg.size), dtype=np.float)
+				hess = np.zeros((arg.size, arg.size), dtype=np.float)
 				for i in range(self.N-1):
 					Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
 					for j in range(3*Sys_dim+1):
@@ -224,10 +221,7 @@ class Objective:
 				idx = np.array(list(idx))
 				return idx[:,0], idx[:,1]
 			else:
-				# hess = lil_matrix((arg.size, arg.size), dtype=np.float)
-				hess_shape = (arg.size, arg.size)
-				hess_size = len(self.hess_sparse_indices[0])
-				hess = csr_matrix((np.zeros(hess_size),self.hess_sparse_indices), shape=hess_shape, dtype=float)
+				hess = np.zeros((arg.size, arg.size), dtype=np.float)
 
 				for i in range(self.N):
 					Htemp = hess_block[:,:,i] + hess_block[:,:,i].T
