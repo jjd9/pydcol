@@ -81,18 +81,23 @@ class CollocationProblem:
 
 		# Scalar Objective
 		if self.colloc_method in [HERM]:
-			Obj = 0
+			Obj_u = 0
 			for i in range(self.U_dim):
 				effort = self.control_vars[i]**2
-				Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+				Obj_u += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
 		elif self.colloc_method in [RADAU]:
-			Obj = 0
+			Obj_u = 0
 			for i in range(self.U_dim):
 				effort = self.control_vars[i]**2
-				Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort)
+				Obj_u += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort)
 		else:
 			effort = self.h * U.multiply_elementwise(U)
-			Obj = np.sum(effort[:])
+			Obj_u = np.sum(effort[:])
+		
+		Obj_t = self.tf
+		w1 = 0.5
+		w2 = 1.0 - w1
+		Obj = w1 * Obj_u + w2 * Obj_t
 
 		# Equality Constraints
 		C_eq = []

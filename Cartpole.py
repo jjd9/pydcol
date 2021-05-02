@@ -19,7 +19,7 @@ if __name__ == "__main__":
 	print("Initialize")
 
 	# collocation type
-	colloc_method = RADAU
+	colloc_method = TRAP
 
 	# physical parameters
 	l = 3.0
@@ -38,8 +38,7 @@ if __name__ == "__main__":
 	q2_d2dot = - (l*m2*cos(q2)*sin(q2)*q2_dot**2 + u*cos(q2) + (m1+m2)*g*sin(q2))/(l*m1 + l*m2*(1-cos(q2)**2))
 	ode = [q1_dot, q2_dot, q1_d2dot, q2_d2dot]
 
-	t0_ = 0
-	tf_ = 5
+	tf_bound = [2,8]
 	N_ = 50
 
 	dist = -4.0 # distance traveled during swing-up maneuver
@@ -51,12 +50,12 @@ if __name__ == "__main__":
 	u_max = 100
 	dist_min, dist_max = -10, 10
 	bounds = [[dist_min, dist_max],[-2*np.pi,2*np.pi],[-100,100],[-100,100],[-u_max,u_max]]
-	tspan = np.linspace(t0_, tf_, N_)
 
 	# Define problem
-	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tf_bound, N_, colloc_method)
 
 	# solve problem
+	print("Solve")
 	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
 	# evaluate solution

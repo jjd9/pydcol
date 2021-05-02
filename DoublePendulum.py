@@ -42,8 +42,7 @@ if __name__ == "__main__":
 		 * (g*l2*m2*sin(phi) + l1*l2*m2*sin(phi - theta)*th_dot**2 - tau))/(l2**2*m2*(-m1 + m2*cos(phi - theta)**2 - m2))
 		]
 
-	t0_ = 0
-	tf_ = 6
+	tf_bound = [2,8]
 	N_ = 100
 
 	X_start = np.array([0, 0, 0, 0], dtype=np.float) # arbitrary goal state
@@ -52,10 +51,9 @@ if __name__ == "__main__":
 	# bounds
 	u_max = 100
 	bounds = [[-2*np.pi,2*np.pi],[None, None],[-2*np.pi,2*np.pi],[None, None],[-u_max,u_max]]
-	tspan = np.linspace(t0_, tf_, N_)
 
 	# Define problem
-	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tf_bound, N_, colloc_method)
 
 	# solve problem
 	sol_c = problem.solve(bounds=bounds, solver='scipy')
