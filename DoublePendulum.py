@@ -42,7 +42,7 @@ if __name__ == "__main__":
 		 * (g*l2*m2*sin(phi) + l1*l2*m2*sin(phi - theta)*th_dot**2 - tau))/(l2**2*m2*(-m1 + m2*cos(phi - theta)**2 - m2))
 		]
 
-	tf_bound = [2,8]
+	tf_bound = [3,5]
 	N_ = 100
 
 	X_start = np.array([0, 0, 0, 0], dtype=np.float) # arbitrary goal state

@@ -28,7 +28,7 @@ if __name__ == "__main__":
 	# Given system equations
 	ode = [v, u]
 
-	N_ = 10
+	N_ = 100
 	tf_bound = [1, 5]
 
 	X_start = np.array([0, 0]) # arbitrary goal state

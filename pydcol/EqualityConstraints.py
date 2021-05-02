@@ -8,7 +8,7 @@ Date: 05/01/2021
 # third party imports
 import IPython
 import numpy as np
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import coo_matrix
 from symengine import Lambdify
 from sympy import Matrix
 
@@ -57,10 +57,24 @@ class EqualityConstraints:
 		import matplotlib.pyplot as plt
 
 		x0 = np.ones(self.Ntilde * (self.X_dim + self.U_dim) + 1)
-		self.jac_sparse_indices = self.jac(x0, return_sparse_indices=True)
 		ncon = self.eval(x0).size
 		lagrange = np.ones(ncon)
+
+		self.jac_sparse_indices = self.jac(x0, return_sparse_indices=True)
+		self.jac_shape = (ncon, x0.size)
+		self.jac_size = len(self.jac_sparse_indices[0])
+		self.jac_dict = dict()
+		for i in range(self.jac_size):
+			key = (self.jac_sparse_indices[0][i],self.jac_sparse_indices[1][i])
+			self.jac_dict[key] = i
+
 		self.hess_sparse_indices = self.hess(x0, lagrange, return_sparse_indices=True)
+		self.hess_shape = (x0.size, x0.size)
+		self.hess_size = len(self.hess_sparse_indices[0])
+		self.hess_dict = dict()
+		for i in range(self.hess_size):
+			key = (self.hess_sparse_indices[0][i],self.hess_sparse_indices[1][i])
+			self.hess_dict[key] = i
 
 
 	def eval(self, arg):
@@ -155,20 +169,20 @@ class EqualityConstraints:
 				cols += np.arange(jac_shape[1]-1-(self.X_dim+self.U_dim), jac_shape[1]-1-self.U_dim).tolist()
 			return rows, cols
 		else:
-			jac = np.zeros(jac_shape, dtype=float)
+			jac = np.zeros(self.jac_size, dtype=float)
 
 			for i in range(self.N-1):
 				for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
 					for k in range(i*Opt_dim, (i+1)*Opt_dim + Opt_dim):
-						jac[j,k]+=J[k-i*Opt_dim,j-i*Ceq_dim,i]
-					jac[j,jac_shape[1]-1]+=J[-1,j-i*Ceq_dim,i]
+						jac[self.jac_dict[(j,k)]]+=J[k-i*Opt_dim,j-i*Ceq_dim,i]
+					jac[self.jac_dict[(j,jac_shape[1]-1)]]+=J[-1,j-i*Ceq_dim,i]
 				if self.N != self.Ntilde:
 					for j in range(i*Ceq_dim, i*Ceq_dim + Ceq_dim):
 						for k in range((i + self.N)*Opt_dim, (i + self.N)*Opt_dim + Opt_dim):
-							jac[j,k]+=J[2*Opt_dim + k-(i + self.N)*Opt_dim,j-i*Ceq_dim,i]
+							jac[self.jac_dict[(j,k)]]+=J[2*Opt_dim + k-(i + self.N)*Opt_dim,j-i*Ceq_dim,i]
 
 			for j in range(Ceq_dim * (self.N-1), Ceq_dim * (self.N-1) + self.X_dim):
-				jac[j,j-Ceq_dim * (self.N-1)] = 1.0
+				jac[self.jac_dict[(j,j-Ceq_dim * (self.N-1))]] = 1.0
 
 			if self.N != self.Ntilde:
 				col_range = (jac_shape[1]-1-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-1-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim)
@@ -178,9 +192,9 @@ class EqualityConstraints:
 			row_range = (Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0])
 
 			for j in range(self.X_dim):
-				jac[j+row_range[0],j+col_range[0]] = 1.0
+				jac[self.jac_dict[(j+row_range[0],j+col_range[0])]] = 1.0
 
-			return jac
+			return coo_matrix((jac, self.jac_sparse_indices),shape=self.jac_shape)
 
 
 	def hess(self, arg, arg_v, return_sparse_indices=False):
@@ -208,7 +222,7 @@ class EqualityConstraints:
 			if return_sparse_indices:
 				return [], []
 			else:
-				return csr_matrix(hess_shape)
+				return coo_matrix(hess_shape, dtype=np.float)
 		else:
 			if self.N == self.Ntilde:
 				V = arg_x.reshape(self.N, self.X_dim+self.U_dim)
@@ -255,27 +269,27 @@ class EqualityConstraints:
 				idx = np.array(list(idx))
 				return idx[:,0], idx[:,1]
 			else:
-				hess = np.zeros((arg.size, arg.size), dtype=np.float)
+				hess = np.zeros(self.hess_size, dtype=np.float)
 
 				for i in range(self.N-1):
 					Htemp = H[:,:,i] + H[:,:,i].T
 					for j in range(hdim):
 						for k in range(j, hdim):
 							if j < 2*Sys_dim and k < 2*Sys_dim: # A
-								hess[i*Sys_dim+j, i*Sys_dim+k]+=Htemp[j,k]
-								hess[i*Sys_dim+k, i*Sys_dim+j]+=Htemp[k,j]
+								hess[self.hess_dict[(i*Sys_dim+j, i*Sys_dim+k)]]+=Htemp[j,k]
+								hess[self.hess_dict[(i*Sys_dim+k, i*Sys_dim+j)]]+=Htemp[k,j]
 							elif self.N != self.Ntilde and j >= 2*Sys_dim and j < 3*Sys_dim and k >= 2*Sys_dim and k < 3*Sys_dim: # B
-								hess[(i + self.N)*Sys_dim+j-2*Sys_dim, (i + self.N)*Sys_dim+k-2*Sys_dim]+=Htemp[j,k]
-								hess[(i + self.N)*Sys_dim+k-2*Sys_dim, (i + self.N)*Sys_dim+j-2*Sys_dim]+=Htemp[k,j]
+								hess[self.hess_dict[((i + self.N)*Sys_dim+j-2*Sys_dim, (i + self.N)*Sys_dim+k-2*Sys_dim)]]+=Htemp[j,k]
+								hess[self.hess_dict[((i + self.N)*Sys_dim+k-2*Sys_dim, (i + self.N)*Sys_dim+j-2*Sys_dim)]]+=Htemp[k,j]
 							elif self.N != self.Ntilde and j < 2*Sys_dim and k >= 2*Sys_dim and k < 3*Sys_dim: # C == D
-								hess[i*Sys_dim+j, (i + self.N)*Sys_dim+k-2*Sys_dim]+=Htemp[j,k]
-								hess[(i + self.N)*Sys_dim+k-2*Sys_dim, i*Sys_dim+j]+=Htemp[k,j]
+								hess[self.hess_dict[(i*Sys_dim+j, (i + self.N)*Sys_dim+k-2*Sys_dim)]]+=Htemp[j,k]
+								hess[self.hess_dict[((i + self.N)*Sys_dim+k-2*Sys_dim, i*Sys_dim+j)]]+=Htemp[k,j]
 							elif j < 2*Sys_dim and k == hdim-1: # E==F
-								hess[i*Sys_dim+j, arg.size-1]+=Htemp[j,k]
-								hess[arg.size-1, i*Sys_dim+j]+=Htemp[k,j]
+								hess[self.hess_dict[(i*Sys_dim+j, arg.size-1)]]+=Htemp[j,k]
+								hess[self.hess_dict[(arg.size-1, i*Sys_dim+j)]]+=Htemp[k,j]
 							elif self.N != self.Ntilde and j >= 2*Sys_dim and k == hdim-1: # E==F
-								hess[(i + self.N)*Sys_dim+j-2*Sys_dim, arg.size-1]+=Htemp[j,k]
-								hess[arg.size-1, (i + self.N)*Sys_dim+j-2*Sys_dim]+=Htemp[k,j]
+								hess[self.hess_dict[((i + self.N)*Sys_dim+j-2*Sys_dim, arg.size-1)]]+=Htemp[j,k]
+								hess[self.hess_dict[(arg.size-1, (i + self.N)*Sys_dim+j-2*Sys_dim)]]+=Htemp[k,j]
 							else:
-								hess[arg.size-1,arg.size-1]+=Htemp[j,k]
-				return hess
+								hess[self.hess_dict[(arg.size-1,arg.size-1)]]+=Htemp[j,k]
+				return coo_matrix((hess, self.hess_sparse_indices),shape=self.hess_shape)
