@@ -49,7 +49,7 @@ problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tsp
 ```
 sol_c = problem.solve(bounds=bounds, solver='scipy')
 ```
-It is up to you to ask reasonable things of the optimizer. Ensure that it is physically possible for your system to go from the state X_start to X_goal in the provided time bounds.
+It is up to you to ask reasonable things of the optimizer. Ensure that it is physically possible for your system to go from the state X_start to X_goal in the provided time bounds. Also good initial guess is not mandatory but certainly help.
 
 8.) Compare the solution to an IVP solution. The control trajectory from the collocation solution found in step 7 is used to integrate the system from t0 to tf. scipy.integrate.solve_ivp is used. The ivp solver can be selected using ivp_method. We recommend implicit methods unless the control trajectory is very smooth.
 ```
