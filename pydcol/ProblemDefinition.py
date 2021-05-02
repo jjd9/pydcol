@@ -254,7 +254,7 @@ class CollocationProblem:
 		else:
 			raise(BadArgumentsError("Error unsupported solver!"))
 
-		self.sol_c.obj = self.objective.eval(np.hstack((self.sol_c.x, self.sol_c.u.reshape(-1,1))).ravel())
+		self.sol_c.obj = self.objective.eval(self.sol_c.opt_x)
 		print("Done")
 		if self.is_solved:
 			print("Success :-)")
@@ -282,7 +282,7 @@ class CollocationProblem:
 		U = self.sol_c.u
 		
 		def system_eqs(t, x_t):
-			U_t = np.array([self.sol_c.u_t(t)], dtype= np.float)
+			U_t = self.sol_c.u_t(t)
 			return self.ode_fun(*x_t, *U_t).ravel()
 
 		eval_tspan = np.linspace(tspan[0],tspan[-1],100)

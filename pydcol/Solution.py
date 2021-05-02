@@ -18,6 +18,8 @@ class Solution:
 	def __init__(self, sol, colloc_method, dims, tspan, solver):
 		(N, Ntilde, X_dim, U_dim) = dims
 
+		self.opt_x = sol.x
+
 		# save whether or not the optimization succeeded
 		if solver == 'ipopt':
 			self.success = True
@@ -44,8 +46,8 @@ class Solution:
 
 		# convert discrete control to time-varying spline
 		if colloc_method in [TRAP, EB, EF]:
-			self.u_t = interp1d(tspan, self.u.ravel(), kind='linear') # linear for trapezoid method
+			self.u_t = interp1d(tspan, self.u.T, kind='linear') # linear for trapezoid method
 		elif colloc_method == HERM:			
-			self.u_t = interp1d(tspan, self.u.ravel(), kind='quadratic') # quadratic for hermite simpson method
+			self.u_t = interp1d(tspan, self.u.T, kind='quadratic') # quadratic for hermite simpson method
 		elif colloc_method == RADAU:			
-			self.u_t = interp1d(tspan, self.u.ravel(), kind='cubic') # cubic for 3rd order radau method
+			self.u_t = interp1d(tspan, self.u.T, kind='cubic') # cubic for 3rd order radau method
