@@ -5,6 +5,8 @@ pydcol solves optimal control problems using direct collocation. The specific pr
 
 <!-- $ \int_{t_{0}}^{t_{f}} u^2 \,dt $ --> <img style="transform: translateY(0.1em); background: white;" src="svg/u1sApyE8bZ.svg">
 
+This is accomplished by converting the continuous ode system into a finite dimensional nonlinear optimization problem (NLP) using an integration scheme. This process is called direct collocation or simultaneous discretization.
+
 ## Setup
 Install the python modules in the requirements.txt file. 
 
