@@ -25,7 +25,7 @@ if __name__ == "__main__":
 	control_vars = [Fl, Ft]
 
 	# Given system equations
-	m, g, J = 1e3, 1.6, 1e5
+	m, g, J = 10e3, 1.6, 1e5 # kg, m/s^2. kg * m^2
 	xddot = (Fl*cos(th) - Ft*sin(th)) / m
 	yddot = (Fl*sin(th) + Ft*cos(th) - m*g) / m
 	thddot = 4*Fl/J
@@ -33,8 +33,8 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 200
-	N_ = 50
-	tspan = np.linspace(t0_, tf_, N_)
+	N_ = 100
+	tspan = np.hstack((t0_, tf_, N_))
 
 	# [x, xdot, y, ydot, th, thdot]
 	X_start = np.array([0.5e3, 0, 16e3, 0, 0, 0], dtype=float) # arbitrary goal state
@@ -48,8 +48,10 @@ if __name__ == "__main__":
 
 	# solve problem
 	print("Solve")
-	sol_c = problem.solve(bounds=bounds, solver='ipopt')
+	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
 	# evaluate solution
-	problem.evaluate()
+	problem.evaluate(ivp_method='Radau')
 
+	# draw lander
+	# draw_lander()
