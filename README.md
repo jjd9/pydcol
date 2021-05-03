@@ -37,9 +37,12 @@ u_max = 10
 bounds = [[None,None],[None,None],[-u_max, u_max]]
 ```
 
-5.) Decide how many nodes to use. More nodes means better accuracy but possibly a longer solve time.
+5.) Decide how many nodes to use. More nodes means better accuracy but possibly a longer solve time. pydcol accepts arbitrary node spacings, but does expect that tspan is sorted from t0 to tf and has no repeats.
 ```
+t0= 0
+tf = 1
 N = 10
+tspan = np.linspace(0,1,N)
 ```
 6.) Define the problem. At this stage, your problem is converted into an objective and constraint function (along with functions to evalute the 1st and second derivatives of those functions). Multiple collocation methods are supported. Here we use euler-forward. For a full list of methods, please see pydol/CollocationMethods.py.
 ```
@@ -49,8 +52,11 @@ problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tsp
 ```
 sol_c = problem.solve(bounds=bounds, solver='scipy')
 ```
+It is up to you to ask reasonable things of the optimizer. Ensure that it is physically possible for your system to go from the state X_start to X_goal in the provided time bounds. Also good initial guess is not mandatory but certainly help.
+
 8.) Compare the solution to an IVP solution. The control trajectory from the collocation solution found in step 7 is used to integrate the system from t0 to tf. scipy.integrate.solve_ivp is used. The ivp solver can be selected using ivp_method. We recommend implicit methods unless the control trajectory is very smooth.
 ```
 problem.evaluate(ivp_method='Radau')
 ```
+
 Please see the examples for more illustrations of how to use the library.
