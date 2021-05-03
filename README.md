@@ -7,10 +7,12 @@ pydcol solves optimal control problems using direct collocation. The specific pr
 
 This is accomplished by converting the continuous ode system into a finite dimensional nonlinear optimization problem (NLP) using an integration scheme. This process is called direct collocation or simultaneous discretization.
 
-## Setup
-Install the python modules in the requirements.txt file. 
+## Dependencies
+pydcol was developed in Python 3.8.
 
-There are two other python libraries to install: numpy and ipyopt. See here for how to install the approrpiate versions: https://gitlab.com/g-braeunlich/ipyopt
+The python modules used are listed in the requirements.txt file. 
+
+Extra steps are involved for installing ipyopt of non-linux systems: https://gitlab.com/g-braeunlich/ipyopt
 
 ## Usage
 1.) Define your ode model as a list of sympy expressions. The list should only contain the right-hand-side of the ode equations. So if your system was:
@@ -48,11 +50,11 @@ tspan = np.linspace(0,1,N)
 ```
 problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method=EF)
 ```
-7.) Solve the problem. The scipy.minimize_trust_constr and IPOPT (Linux only) solvers are supported. IPOPT takes faster steps and handles large-sparse systems better (>6 states and/or 1000's of nodes). scipy.minimize_trust_constr takes more intelligent steps and handles small systems better (<6 states and/or 100's of nodes). 
+7.) Solve the problem. The scipy.minimize,trust-constr (https://docs.scipy.org/doc/scipy/reference/optimize.minimize-trustconstr.html) and IPOPT (https://github.com/coin-or/Ipopt) solvers are supported. IPOPT takes faster steps and handles large, sparse systems better (>6 states and/or 1000's of nodes). scipy.minimize.trust-constr takes more intelligent steps and handles small systems better (<6 states and/or 100's of nodes). 
 ```
 sol_c = problem.solve(bounds=bounds, solver='scipy')
 ```
-It is up to you to ask reasonable things of the optimizer. Ensure that it is physically possible for your system to go from the state X_start to X_goal in the provided time bounds. Also good initial guess is not mandatory but certainly help.
+It is up to the user to ask reasonable things of the optimizer. Ensure that it is physically possible for your system to go from the state X_start to X_goal in the provided time bounds. A good initial guess is not always mandatory but often helps.
 
 8.) Compare the solution to an IVP solution. The control trajectory from the collocation solution found in step 7 is used to integrate the system from t0 to tf. scipy.integrate.solve_ivp is used. The ivp solver can be selected using ivp_method. We recommend implicit methods unless the control trajectory is very smooth.
 ```
