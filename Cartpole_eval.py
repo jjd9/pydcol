@@ -16,11 +16,13 @@ from pydcol.Animator import draw_cartpole
 from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
 
+import matplotlib.pyplot as plt
+
 if __name__ == "__main__":
 	print("Initialize")
 
 	# collocation type
-	colloc_method = TRAP
+	colloc_method = HERM
 
 	# physical parameters
 	l = 3.0
@@ -57,16 +59,8 @@ if __name__ == "__main__":
 	obj = []
 	error = []
 	last_sol = None
-
-	for i in range(10):
-		# divide each segment of time by 2
-		new_tspan = [tspan[0]]
-		for j in range(1,tspan.size):
-			seg_length = tspan[j] - tspan[j-1]
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-		tspan = np.array(new_tspan)
-
+	segments = []
+	for i in range(9):
 		# Define problem
 		problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
@@ -80,8 +74,22 @@ if __name__ == "__main__":
 			err = np.linalg.norm(cur_points - prev_points,axis=1).max()
 			error.append(err)
 			print("Error: ", err)
+			segments.append(tspan.size)
 
 		last_sol = deepcopy(sol_c)
 
+		# divide each segment of time by 2
+		new_tspan = [tspan[0]]
+		for j in range(1,tspan.size):
+			seg_length = tspan[j] - tspan[j-1]
+			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
+			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
+		tspan = np.array(new_tspan)
+
+
 	error = np.array(error)
-	print(-np.log(np.abs(error[:-1]/error[1:]))/np.log(2))
+	print(np.log(np.abs(error[:-1]/error[1:]))/np.log(2))
+	plt.plot(segments, error)
+	plt.xlabel("Number of Segments")
+	plt.ylabel("Error, |X(i) - X(i-1)|")
+	plt.show()

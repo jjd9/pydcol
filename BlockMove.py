@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 1
-	N_ = 1000
+	N_ = 10
 	tspan = np.linspace(t0_, tf_, N_)
 
 	X_start = np.array([0, 0]) # arbitrary goal state
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
 	# solve problem
-	sol_c = problem.solve(bounds=bounds, solver='ipopt')
+	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
 	# evaluate solution
 	problem.evaluate()

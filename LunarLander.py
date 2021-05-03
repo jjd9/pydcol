@@ -32,15 +32,15 @@ if __name__ == "__main__":
 	ode = [xdot, xddot, ydot, yddot, thdot, thddot]
 
 	t0_ = 0
-	tf_ = 200
+	tf_ = 100
 	N_ = 100
-	tspan = np.hstack((t0_, tf_, N_))
+	tspan = np.linspace(t0_, tf_, N_)
 
 	# [x, xdot, y, ydot, th, thdot]
-	X_start = np.array([0.5e3, 0, 16e3, 0, 0, 0], dtype=float) # arbitrary goal state
+	X_start = np.array([0.5e3, 0, 3e3, 0, 0, 0], dtype=float) # arbitrary goal state
 	X_goal = np.array([0, 0, 0, 0, 0, 0], dtype=float) # arbitrary goal state
 	x_bounds = [[None,None], [None,None], [0,None], [None,None], [-np.pi,np.pi], [None,None]]
-	u_bounds = [[-5e3, 5e3],[0, 44e3]]
+	u_bounds = [[-5e3, 5e3],[0, 40e3]]
 	bounds = x_bounds + u_bounds
 	# Define problem
 	print("Setup")
