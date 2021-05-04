@@ -66,9 +66,9 @@ bounds = [[None,None],[None,None],[-u_max, u_max]]
 
 5.) Decide how many nodes to use. More nodes means better accuracy but possibly a longer solve time. pydcol accepts arbitrary node spacings, but does expect that tspan is sorted from t0 to tf and has no repeats.
 ```
-t0= 0
+t0 = 0
 tf = 1
-N = 10
+N  = 10
 tspan = np.linspace(0,1,N)
 ```
 6.) Define the problem. At this stage, your problem is converted into an objective and constraint function (along with functions to evalute the 1st and second derivatives of those functions). Multiple collocation methods are supported. Here we use euler-forward. For a full list of methods, please see pydol/CollocationMethods.py.
