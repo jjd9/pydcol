@@ -7,9 +7,10 @@ Date: 05/01/2021
 
 # third party imports
 import numpy as np
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import csr_matrix
 from symengine import Lambdify
 from sympy import Matrix
+from typing import Union
 
 # pydcol imports
 from .SymUtils import fast_jac, fast_half_hess
@@ -66,7 +67,7 @@ class EqualityConstraints:
 			key = (self.hess_sparse_indices[0][i],self.hess_sparse_indices[1][i])
 			self.hess_dict[key] = i
 
-	def eval(self, arg):
+	def eval(self, arg: np.array)->np.array:
 		"""
 		Evaluate equality constraints for given value of optimization variable.
 
@@ -93,7 +94,7 @@ class EqualityConstraints:
 		terminal_constr = (_X[-1,:] - self.X_goal).ravel()
 		return np.hstack((_out, initial_constr, terminal_constr))
 
-	def jac(self, arg: np.array, return_sparse_indices: bool = False):
+	def jac(self, arg: np.array, return_sparse_indices: bool = False)->Union[tuple, csr_matrix]:
 		"""
 		Evaluate jacobian of equality constraints for given value of optimization variable.
 
@@ -156,7 +157,7 @@ class EqualityConstraints:
 			jac += np.ones(2 * self.X_dim).tolist()
 			return csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
 
-	def hess(self, arg_x, arg_v, return_sparse_indices=False):
+	def hess(self, arg_x: np.array, arg_v: np.array, return_sparse_indices: bool = False)->Union[tuple, csr_matrix]:
 		"""
 		Evaluate hessian of equality constraints for given value of optimization variable.
 

@@ -8,9 +8,10 @@ Date: 05/01/2021
 
 # third party imports
 import numpy as np
-from scipy.sparse import csr_matrix, lil_matrix
+from scipy.sparse import csr_matrix
 from symengine import Lambdify
 from sympy import Matrix, hessian
+from typing import Union
 
 # pydcol imports
 from .SymUtils import fast_jac, fast_half_hess
@@ -115,7 +116,7 @@ class Objective:
 
 		return jac
 
-	def hess(self, arg, return_sparse_indices=False):
+	def hess(self, arg: np.array, return_sparse_indices: bool = False)->Union[tuple, csr_matrix]:
 		"""
 		Evaluate gradient vector of objective function for given value of optimization variable.
 
