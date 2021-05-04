@@ -20,6 +20,7 @@ source pydcol-env/bin/activate
 
 On Windows:
 ```
+python -m venv pydcol-env
 pydcol-env\Scripts\activate.bat
 ```
 
