@@ -7,35 +7,31 @@ pydcol solves optimal control problems using direct collocation. The specific pr
 
 This is accomplished by converting the continuous ode system into a finite dimensional nonlinear optimization problem (NLP) using an integration scheme. This process is called direct collocation or simultaneous discretization.
 
-## Third-party Software Acknowledgements
-Matplotlib (https://matplotlib.org/)
-- Plots and animations
+## Getting Started
+Please make sure you have Python 3 installed on your computer. pydcol was developed in Python 3.8, but earlier versions of Python 3 should work.
 
-Numpy (https://numpy.org/)
-- np.array datastructure
-- Fast operations on np.arrays
+It is always recommended to setup a virtual environment so that our dependencies do not mess up your system setup. To do so, run:
 
-Ipyopt (https://gitlab.com/g-braeunlich/ipyopt)
-- Wrapper around IPOPT for Nonlinear optimization (https://github.com/coin-or/Ipopt)
+On Mac/Linux systems:
+```
+python3 -m venv pydcol-env
+source pydcol-env/bin/activate
+```
 
-Scipy (for supporting numerical methods):
-- Sparse matrix manipulation (https://docs.scipy.org/doc/scipy/reference/sparse.html)
-- Solving IVP's (https://docs.scipy.org/doc/scipy/reference/integrate.html)
-- Nonlinear optimization (https://docs.scipy.org/doc/scipy/reference/optimize.minimize-trustconstr.html)
+On Windows:
+```
+pydcol-env\Scripts\activate.bat
+```
 
-Symengine (https://github.com/symengine/symengine.py):
-- Faster symbolic derivative than sympy
-- More robust conversion from symbolic expression to numeric function
+The python modules can then be installed using: 
+```pip install -r requirements.txt```
 
-Sympy (https://www.sympy.org/en/index.html)
-- Symbolic variable manipulation
+If you want to use IPOPT, extra steps are involved for installing ipyopt on non-linux systems. Please see the package for more information: https://gitlab.com/g-braeunlich/ipyopt. However, this is not mandatory to use pydcol.
 
-## Dependencies
-pydcol was developed in Python 3.8.
-
-The python modules used are listed in the requirements.txt file. 
-
-Extra steps are involved for installing ipyopt of non-linux systems: https://gitlab.com/g-braeunlich/ipyopt
+To confirm the setup worked properly, run the BlockMove.py example as follows:
+```
+python BlockMove.py
+```
 
 ## Usage
 1.) Define your ode model as a list of sympy expressions. The list should only contain the right-hand-side of the ode equations. So if your system was:
@@ -85,3 +81,26 @@ problem.evaluate(ivp_method='Radau')
 ```
 
 Please see the examples for more illustrations of how to use the library.
+
+## Third-party Software Acknowledgements
+Matplotlib (https://matplotlib.org/)
+- Plots and animations
+
+Numpy (https://numpy.org/)
+- np.array datastructure
+- Fast operations on np.arrays
+
+Ipyopt (https://gitlab.com/g-braeunlich/ipyopt)
+- Wrapper around IPOPT for Nonlinear optimization (https://github.com/coin-or/Ipopt)
+
+Scipy (for supporting numerical methods):
+- Sparse matrix manipulation (https://docs.scipy.org/doc/scipy/reference/sparse.html)
+- Solving IVP's (https://docs.scipy.org/doc/scipy/reference/integrate.html)
+- Nonlinear optimization (https://docs.scipy.org/doc/scipy/reference/optimize.minimize-trustconstr.html)
+
+Symengine (https://github.com/symengine/symengine.py):
+- Faster symbolic derivative than sympy
+- More robust conversion from symbolic expression to numeric function
+
+Sympy (https://www.sympy.org/en/index.html)
+- Symbolic variable manipulation
