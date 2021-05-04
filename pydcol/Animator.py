@@ -10,6 +10,9 @@ Date: 05/01/2021
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
+import os
+
+plt.rcParams['animation.ffmpeg_path'] = os.environ.get('FFMPEG_PATH')
 
 def rot(box, th):
     bx = box[:,0].copy()
@@ -23,7 +26,7 @@ def shift(box, x, y):
     box[:,1] += y
     return box
 
-def draw_lander(x_traj, u, interval=3):
+def draw_lander(x_traj, u, interval=3, save_anim=False):
     """
     Animate lunar lander.
     x = [x, dx, y, dy, th, dth]
@@ -101,9 +104,16 @@ def draw_lander(x_traj, u, interval=3):
     axis.set_xlabel("X [meters]")
     axis.set_ylabel("Y [meters]")
     axis.set_aspect("equal")
-    plt.show()
+    axis.set_aspect("equal")
+    if save_anim:
+        writervideo = animation.FFMpegWriter(fps=30)
+        print("save")
+        anim.save('lunar_lander.mp4', writer=writervideo)
+        plt.close()
+    else:
+        plt.show()
 
-def draw_block(x_traj, interval=3):
+def draw_block(x_traj, interval=3, save_anim=False):
     """
     Animate block
     x = [x, v]
@@ -144,9 +154,15 @@ def draw_block(x_traj, interval=3):
     anim = animation.FuncAnimation(fig, animate, init_func=init,
                                    frames=x_traj.shape[0], interval=interval, blit=True)
     axis.set_aspect("equal")
-    plt.show()
+    if save_anim:
+        writervideo = animation.FFMpegWriter(fps=30)
+        print("save")
+        anim.save('blockmove.mp4', writer=writervideo)
+        plt.close()
+    else:
+        plt.show()
 
-def draw_cartpole(x_traj, context, interval=3):
+def draw_cartpole(x_traj, context, interval=3, save_anim=False):
     """
     Animate cartpole
     x = [x, th1, x_dot, th1_dot]
@@ -194,9 +210,15 @@ def draw_cartpole(x_traj, context, interval=3):
     anim = animation.FuncAnimation(fig, animate, init_func=init,
                                    frames=x_traj.shape[0], interval=interval, blit=True)
     axis.set_aspect("equal")
-    plt.show()
+    if save_anim:
+        writervideo = animation.FFMpegWriter(fps=30)
+        print("save")
+        anim.save('cartpole.mp4', writer=writervideo)
+        plt.close()
+    else:
+        plt.show()
 
-def draw_double_pendulum(x_traj, context, interval=3):
+def draw_double_pendulum(x_traj, context, interval=3, save_anim=False):
     """
     Animate double pendulum
     x = [th1, th1_dot, th2, th2_dot]
@@ -230,4 +252,10 @@ def draw_double_pendulum(x_traj, context, interval=3):
     # calling the animation function
     anim = animation.FuncAnimation(fig, animate, init_func=init,
                                    frames=x_traj.shape[0], interval=interval, blit=True)
-    plt.show()
+    print("save")
+    if save_anim:
+        writervideo = animation.FFMpegWriter(fps=30)
+        anim.save('blockmove.mp4', writer=writervideo)
+        plt.close()
+    else:
+        plt.show()

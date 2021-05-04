@@ -53,4 +53,4 @@ if __name__ == "__main__":
 	problem.evaluate()
 
 	# animate solution
-	# draw_block(sol_c.x)
+	draw_block(sol_c.x, save_anim=True)
