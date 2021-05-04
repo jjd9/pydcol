@@ -290,13 +290,9 @@ class CollocationProblem:
 
 		colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y']
 
-		for i in range(self.X_dim):
-			sol_ivp.y[i,:] /= np.abs(X[:,i]).max()
-			X[:,i] /= np.abs(X[:,i]).max()
-
 		_, axs = plt.subplots(2, 1)
 		axs[0].set_title("Collocation Points vs. Integration Results")
-		for i in range(0, self.X_dim, 2):
+		for i in range(self.X_dim):
 			axs[0].plot(tspan, X[:,i],'o',color=colors[i],markersize=3)
 			axs[0].plot(sol_ivp.t, sol_ivp.y[i,:],color=colors[i])
 		axs[0].set_ylabel("State Variables")
