@@ -278,7 +278,7 @@ class CollocationProblem:
 		"""
 
 		tspan = self.sol_c.t
-		X = self.sol_c.x
+		X = self.sol_c.x.copy()
 		U = self.sol_c.u
 		
 		def system_eqs(t, x_t):
@@ -290,10 +290,14 @@ class CollocationProblem:
 
 		colors = ['k', 'g', 'b', 'r', 'c', 'm', 'y']
 
+		for i in range(self.X_dim):
+			sol_ivp.y[i,:] /= np.abs(X[:,i]).max()
+			X[:,i] /= np.abs(X[:,i]).max()
+
 		_, axs = plt.subplots(2, 1)
 		axs[0].set_title("Collocation Points vs. Integration Results")
-		for i in range(self.X_dim):
-			axs[0].plot(tspan, X[:,i],'o',color=colors[i])
+		for i in range(0, self.X_dim, 2):
+			axs[0].plot(tspan, X[:,i],'o',color=colors[i],markersize=3)
 			axs[0].plot(sol_ivp.t, sol_ivp.y[i,:],color=colors[i])
 		axs[0].set_ylabel("State Variables")
 		axs[0].plot([], [],'o',color='k',label='Colloc solution')
@@ -302,7 +306,7 @@ class CollocationProblem:
 
 		U_t = np.array(self.sol_c.u_t(sol_ivp.t)).T.reshape(-1, self.U_dim)
 		for j in range(self.U_dim):
-			axs[1].plot(tspan, U[:,j],'o',color=colors[j])
+			axs[1].plot(tspan, U[:,j],'o',color=colors[j],markersize=3)
 			axs[1].plot(sol_ivp.t, U_t[:,j],color=colors[j])
 		axs[1].set_ylabel("Control Variables")
 		axs[1].set_xlabel("Time [s]")

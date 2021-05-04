@@ -25,7 +25,7 @@ if __name__ == "__main__":
 	print("Initialize")
 
 	# collocation type
-	colloc_method = HERM
+	colloc_methods = [EB, TRAP, HERM, RADAU]
 
 	# physical parameters
 	l = 3.0
@@ -44,10 +44,6 @@ if __name__ == "__main__":
 	q2_d2dot = - (l*m2*cos(q2)*sin(q2)*q2_dot**2 + u*cos(q2) + (m1+m2)*g*sin(q2))/(l*m1 + l*m2*(1-cos(q2)**2))
 	ode = [q1_dot, q2_dot, q1_d2dot, q2_d2dot]
 
-	t0_ = 0
-	tf_ = 5
-	N_ = 3
-
 	dist = -4.0 # distance traveled during swing-up maneuver
 
 	X_start = np.array([0, 0, 0, 0]) # arbitrary goal state
@@ -57,42 +53,53 @@ if __name__ == "__main__":
 	u_max = 100
 	dist_min, dist_max = -10, 10
 	bounds = [[dist_min, dist_max],[-2*np.pi,2*np.pi],[-100,100],[-100,100],[-u_max,u_max]]
-	tspan = np.linspace(t0_, tf_, N_)
 
-	obj = []
-	error = []
-	last_sol = None
-	segments = []
-	for i in range(9):
-		# Define problem
-		problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	error = {}
+	for colloc_method in colloc_methods:
+		error[colloc_method] = []
 
-		# solve problem
-		print("Start solve")
-		sol_c = problem.solve(bounds=bounds, solver='scipy')
-		obj.append(sol_c.obj)
-		if last_sol is not None:
-			prev_points = last_sol.x
-			cur_points = sol_c.x[::2,:]
-			err = np.linalg.norm(cur_points - prev_points,axis=1).max()
-			error.append(err)
-			print("Error: ", err)
-			segments.append(tspan.size)
+	for colloc_method in colloc_methods:
+		t0_ = 0
+		tf_ = 5
+		N_ = 10
+		tspan = np.linspace(t0_, tf_, N_)
 
-		last_sol = deepcopy(sol_c)
+		last_sol = None
+		segments = []
+		for i in range(8):
+			# Define problem
+			problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
-		# divide each segment of time by 2
-		new_tspan = [tspan[0]]
-		for j in range(1,tspan.size):
-			seg_length = tspan[j] - tspan[j-1]
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-		tspan = np.array(new_tspan)
+			# solve problem
+			print("Start solve")
+			sol_c = problem.solve(bounds=bounds, solver='scipy')
+			if last_sol is not None:
+				prev_points = last_sol.x
+				cur_points = sol_c.x[::2,:]
+				err = np.linalg.norm(cur_points - prev_points,axis=1).mean()
+				error[colloc_method].append(err)
+				print("Error: ", err)
+				segments.append(tspan.size)
 
+			last_sol = deepcopy(sol_c)
 
-	error = np.array(error)
-	print(np.log(np.abs(error[:-1]/error[1:]))/np.log(2))
-	plt.plot(segments, error)
-	plt.xlabel("Number of Segments")
-	plt.ylabel("Error, |X(i) - X(i-1)|")
+			# divide each segment of time by 2
+			new_tspan = [tspan[0]]
+			for j in range(1,tspan.size):
+				seg_length = tspan[j] - tspan[j-1]
+				new_tspan.append(new_tspan[-1] + seg_length / 2.0)
+				new_tspan.append(new_tspan[-1] + seg_length / 2.0)
+			tspan = np.array(new_tspan)
+
+	# Plot results
+	fig, ax = plt.subplots()
+	for colloc_method in error:
+		name = METHOD_NAMES[colloc_method]
+		ax.loglog(segments, error[colloc_method], label=name)
+		temp_error = np.array(error[colloc_method])
+		print(name, ": ", np.log(np.abs(temp_error[:-1]/temp_error[1:]))/np.log(2))
+	ax.set_xlabel("Number of Segments")
+	ax.set_ylabel("Error, |X(i) - X(i-1)|")
+	ax.grid()
+	ax.legend()
 	plt.show()

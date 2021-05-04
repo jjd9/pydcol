@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
-	colloc_method = TRAP
+	colloc_methods = [EB, TRAP, HERM, RADAU]
 
 	# define variables
 	x, v = symbols("x v")
@@ -37,44 +37,52 @@ if __name__ == "__main__":
 	u_max = 10
 	bounds = [[None,None],[None,None],[-u_max, u_max]]
 
-	t0_ = 0
-	tf_ = 1
-	N_ = 3
-	tspan = np.linspace(t0_, tf_, N_)
+	error = {}
+	for colloc_method in colloc_methods:
+		error[colloc_method] = []
 
-	obj = []
-	error = []
-	last_sol = None
-	segments = []
-	for i in range(8):
-		# Define problem
-		problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	for colloc_method in colloc_methods:
+		t0_ = 0
+		tf_ = 1
+		N_ = 3
+		tspan = np.linspace(t0_, tf_, N_)
 
-		# solve problem
-		print("Start solve")
-		sol_c = problem.solve(bounds=bounds, solver='scipy')
-		obj.append(sol_c.obj)
-		if last_sol is not None:
-			prev_points = last_sol.x
-			cur_points = sol_c.x[::2,:]
-			err = np.linalg.norm(cur_points - prev_points, axis=1).mean()
-			error.append(err)
-			print("Error: ", err)
-			segments.append(len(tspan))
+		last_sol = None
+		segments = []
+		for i in range(10):
+			# Define problem
+			problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
-		last_sol = deepcopy(sol_c)
+			# solve problem
+			print("Start solve")
+			sol_c = problem.solve(bounds=bounds, solver='scipy')
+			if last_sol is not None:
+				prev_points = last_sol.x
+				cur_points = sol_c.x[::2,:]
+				err = np.linalg.norm(cur_points - prev_points, axis=1).mean()
+				error[colloc_method].append(err)
+				print("Error: ", err)
+				segments.append(len(tspan))
 
-		# divide each segment of time by 2
-		new_tspan = [tspan[0]]
-		for j in range(1,tspan.size):
-			seg_length = tspan[j] - tspan[j-1]
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-		tspan = np.array(new_tspan)
+			last_sol = deepcopy(sol_c)
 
-	plt.plot(segments, error)
-	plt.xlabel("Number of Segments")
-	plt.ylabel("Error, |X(i) - X(i-1)|")
+			# divide each segment of time by 2
+			new_tspan = [tspan[0]]
+			for j in range(1,tspan.size):
+				seg_length = tspan[j] - tspan[j-1]
+				new_tspan.append(new_tspan[-1] + seg_length / 2.0)
+				new_tspan.append(new_tspan[-1] + seg_length / 2.0)
+			tspan = np.array(new_tspan)
+
+	# Plot results
+	fig, ax = plt.subplots()
+	for colloc_method in error:
+		name = METHOD_NAMES[colloc_method]
+		ax.loglog(segments, error[colloc_method], label=name)
+		temp_error = np.array(error[colloc_method])
+		print(name, ": ", np.log(np.abs(temp_error[:-1]/temp_error[1:]))/np.log(2))
+	ax.set_xlabel("Number of Segments")
+	ax.set_ylabel("Error, |X(i) - X(i-1)|")
+	ax.grid()
+	ax.legend()
 	plt.show()
-	error = np.array(error)
-	print(np.log(np.abs(error[:-1]/error[1:]))/np.log(2))

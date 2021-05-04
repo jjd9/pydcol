@@ -11,13 +11,97 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 
-def draw_lander(x, u):
+def rot(box, th):
+    bx = box[:,0].copy()
+    by = box[:,1].copy()
+    box[:,0] = np.cos(th)*bx - np.sin(th)*by
+    box[:,1] = np.sin(th)*bx + np.cos(th)*by 
+    return box
+
+def shift(box, x, y):
+    box[:,0] += x
+    box[:,1] += y
+    return box
+
+def draw_lander(x_traj, u, interval=3):
     """
     Animate lunar lander.
     x = [x, dx, y, dy, th, dth]
     u = [Flat, Fup]
     """
+    # creating a blank window
+    # for the animation
+    fig = plt.figure()
+    axis = plt.axes(xlim=(-2e3, 2e3),
+                    ylim=(-500, 5e3))
 
+    line, = axis.plot([], [], 'k-o', lw=2)
+    block, = axis.plot([], [], 'b-', lw=2)
+    on_thrusters, = axis.plot([], [], 'ro', markersize=5,label='thrust on')
+    off_thrusters, = axis.plot([], [], 'ko', markersize=5,label='thrust off')
+    path, = axis.plot([], [], 'r-', lw=2)
+    th = np.linspace(0, 2*np.pi)
+    rad = 5000
+    x = np.cos(th)*rad
+    y = np.sin(th)*rad - rad
+    axis.plot(x, y, 'k')
+    axis.legend()
+
+    def init():
+        line.set_data([], [])
+        block.set_data([], [])
+        path.set_data([], [])
+        return line,block, path
+
+    def animate(i):
+        x, dx, y, dy, th, dth = x_traj[i, :]
+        Fl, Ft = u[i,:]
+        dim = 500
+        box = np.array([[0,1],
+                        [1,0],
+                        [-1,0],
+                        [0,1]]).astype(float) * dim
+        box = rot(box, th)
+        box = shift(box, x, y)
+        block.set_data(box[:,0], box[:,1])
+        xp=x_traj[:i,0]
+        yp=x_traj[:i,2]
+        path.set_data(xp,yp)
+
+        t_on = []
+        t_off = []
+        if Fl > 0:
+            t_off.append([-dim,0])
+            t_on.append([dim,0])
+        elif Fl < 0:
+            t_off.append([-dim,0])
+            t_on.append([dim,0])
+        else:
+            t_off.append([dim,0])
+            t_off.append([-dim,0])
+
+        if Ft > 1.0:
+            t_on.append([0,0])
+        else:
+            t_off.append([0,0])
+        t_on = np.array(t_on, dtype=float)
+        t_on = rot(t_on, th)
+        t_on = shift(t_on, x, y)
+        t_off = np.array(t_off, dtype=float)
+        t_off = rot(t_off, th)
+        t_off = shift(t_off, x, y)
+        on_thrusters.set_data(t_on[:,0], t_on[:,1])
+        off_thrusters.set_data(t_off[:,0], t_off[:,1])
+
+        return block,path,on_thrusters,off_thrusters
+
+    # calling the animation function
+    anim = animation.FuncAnimation(fig, animate, init_func=init,
+                                   frames=x_traj.shape[0], interval=interval, blit=True)
+    axis.set_xlabel("X [meters]")
+    axis.set_ylabel("Y [meters]")
+    axis.set_aspect("equal")
+    plt.show()
 
 def draw_block(x_traj, interval=3):
     """

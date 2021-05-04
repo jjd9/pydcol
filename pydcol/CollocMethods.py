@@ -12,3 +12,5 @@ EB = 3
 EF = 4
 
 MIDPOINT_METHODS = [HERM, RADAU]
+
+METHOD_NAMES = ["Trapezoid", "Hermite-Simpson", "Radau", "Euler-Backward", "Euler-Forward"]

@@ -12,8 +12,9 @@ sys.path.insert(0, '..')
 import numpy as np
 from sympy import symbols
 from sympy import sin, cos
-from sympy import Matrix, lambdify
+from sympy import Matrix
 
+from pydcol.Animator import draw_lander
 from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
 
@@ -42,7 +43,7 @@ if __name__ == "__main__":
 	# [x, xdot, y, ydot, th, thdot]
 	X_start = np.array([0.5e3, 0, 3e3, 0, 0, 0], dtype=float) # arbitrary goal state
 	X_goal = np.array([0, 0, 0, 0, 0, 0], dtype=float) # arbitrary goal state
-	x_bounds = [[None,None], [None,None], [0,None], [None,None], [-np.pi,np.pi], [None,None]]
+	x_bounds = [[None,None], [None,None], [0,None], [None,None], [-np.pi/4,np.pi/4], [None,None]]
 	u_bounds = [[-5e3, 5e3],[0, 40e3]]
 	bounds = x_bounds + u_bounds
 	# Define problem
