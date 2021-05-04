@@ -11,6 +11,14 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import numpy as np
 
+def draw_lander(x, u):
+    """
+    Animate lunar lander.
+    x = [x, dx, y, dy, th, dth]
+    u = [Flat, Fup]
+    """
+
+
 def draw_block(x_traj, interval=3):
     """
     Animate block

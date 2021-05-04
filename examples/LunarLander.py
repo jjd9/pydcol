@@ -6,6 +6,9 @@ Authors: John D'Angelo, Shreyas Sudhaman
 Date: 05/02/2021
 """
 
+import sys
+sys.path.insert(0, '..')
+
 import numpy as np
 from sympy import symbols
 from sympy import sin, cos
@@ -54,4 +57,4 @@ if __name__ == "__main__":
 	problem.evaluate(ivp_method='Radau')
 
 	# draw lander
-	# draw_lander()
+	draw_lander(sol_c.x, sol_c.u)

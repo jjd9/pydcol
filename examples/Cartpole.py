@@ -1,22 +1,22 @@
 """
 
-Cartpole example with state and control error analysis
+Cartpole example
 
 Authors: John D'Angelo, Shreyas Sudhaman
 
 """
 
+import sys
+sys.path.insert(0, '..')
+
 import numpy as np
 from sympy import symbols
 from sympy import sin, cos
 from sympy import Matrix, lambdify
-from copy import deepcopy
 
 from pydcol.Animator import draw_cartpole
 from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
-
-import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 	print("Initialize")
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
 	t0_ = 0
 	tf_ = 5
-	N_ = 3
+	N_ = 50
 
 	dist = -4.0 # distance traveled during swing-up maneuver
 
@@ -56,40 +56,14 @@ if __name__ == "__main__":
 	bounds = [[dist_min, dist_max],[-2*np.pi,2*np.pi],[-100,100],[-100,100],[-u_max,u_max]]
 	tspan = np.linspace(t0_, tf_, N_)
 
-	obj = []
-	error = []
-	last_sol = None
-	segments = []
-	for i in range(9):
-		# Define problem
-		problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	# Define problem
+	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
-		# solve problem
-		print("Start solve")
-		sol_c = problem.solve(bounds=bounds, solver='scipy')
-		obj.append(sol_c.obj)
-		if last_sol is not None:
-			prev_points = last_sol.x
-			cur_points = sol_c.x[::2,:]
-			err = np.linalg.norm(cur_points - prev_points,axis=1).max()
-			error.append(err)
-			print("Error: ", err)
-			segments.append(tspan.size)
+	# solve problem
+	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
-		last_sol = deepcopy(sol_c)
+	# evaluate solution
+	problem.evaluate(ivp_method='Radau')
 
-		# divide each segment of time by 2
-		new_tspan = [tspan[0]]
-		for j in range(1,tspan.size):
-			seg_length = tspan[j] - tspan[j-1]
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-			new_tspan.append(new_tspan[-1] + seg_length / 2.0)
-		tspan = np.array(new_tspan)
-
-
-	error = np.array(error)
-	print(np.log(np.abs(error[:-1]/error[1:]))/np.log(2))
-	plt.plot(segments, error)
-	plt.xlabel("Number of Segments")
-	plt.ylabel("Error, |X(i) - X(i-1)|")
-	plt.show()
+	# animate solution
+	draw_cartpole(sol_c.x, [l, m1, m2, g])

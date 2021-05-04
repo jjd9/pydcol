@@ -6,6 +6,9 @@ Authors: John D'Angelo, Shreyas Sudhaman
 Date: 05/01/2021
 """
 
+import sys
+sys.path.insert(0, '..')
+
 import numpy as np
 from sympy import symbols
 from sympy import sin, cos
