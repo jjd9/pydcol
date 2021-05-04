@@ -33,7 +33,7 @@ If you want to use IPOPT, extra steps are involved for installing ipyopt on non-
 
 To confirm the setup worked properly, run the BlockMove.py example as follows:
 ```
-python BlockMove.py
+python examples/BlockMove.py
 ```
 
 ## Usage
