@@ -1,11 +1,34 @@
 # pydcol
-This is a repo for our ME 397 Numerical methods project.
+This is a repository for our ME 397 Numerical methods project.
 
 pydcol solves optimal control problems using direct collocation. The specific problem pydcol solves for a given system is to find an open-loop control trajectory connecting an initial system state to a final system state over a fixed time interval. The control trajectory provided by pydcol minimizes the control effort, which is the integral of the sum of all the control inputs squared.
 
 <!-- $ \int_{t_{0}}^{t_{f}} u^2 \,dt $ --> <img style="transform: translateY(0.1em); background: white;" src="svg/u1sApyE8bZ.svg">
 
 This is accomplished by converting the continuous ode system into a finite dimensional nonlinear optimization problem (NLP) using an integration scheme. This process is called direct collocation or simultaneous discretization.
+
+## Third-party Software Acknowledgements
+Matplotlib (https://matplotlib.org/)
+- Plots and animations
+
+Numpy (https://numpy.org/)
+- np.array datastructure
+- Fast operations on np.arrays
+
+Ipyopt (https://gitlab.com/g-braeunlich/ipyopt)
+- Wrapper around IPOPT for Nonlinear optimization (https://github.com/coin-or/Ipopt)
+
+Scipy (for supporting numerical methods):
+- Sparse matrix manipulation (https://docs.scipy.org/doc/scipy/reference/sparse.html)
+- Solving IVP's (https://docs.scipy.org/doc/scipy/reference/integrate.html)
+- Nonlinear optimization (https://docs.scipy.org/doc/scipy/reference/optimize.minimize-trustconstr.html)
+
+Symengine (https://github.com/symengine/symengine.py):
+- Faster symbolic derivative than sympy
+- More robust conversion from symbolic expression to numeric function
+
+Sympy (https://www.sympy.org/en/index.html)
+- Symbolic variable manipulation
 
 ## Dependencies
 pydcol was developed in Python 3.8.
