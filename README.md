@@ -89,15 +89,16 @@ problem.evaluate(ivp_method='Radau')
 Please see the examples for more illustrations of how to use the library.
 
 ## Third-party Software Acknowledgements
+
+Ipyopt (https://gitlab.com/g-braeunlich/ipyopt)
+- Wrapper around IPOPT for Nonlinear optimization (https://github.com/coin-or/Ipopt)
+
 Matplotlib (https://matplotlib.org/)
 - Plots and animations
 
 Numpy (https://numpy.org/)
 - np.array datastructure
 - Fast operations on np.arrays
-
-Ipyopt (https://gitlab.com/g-braeunlich/ipyopt)
-- Wrapper around IPOPT for Nonlinear optimization (https://github.com/coin-or/Ipopt)
 
 Scipy (for supporting numerical methods):
 - Sparse matrix manipulation (https://docs.scipy.org/doc/scipy/reference/sparse.html)
