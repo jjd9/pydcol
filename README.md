@@ -10,6 +10,8 @@ This is accomplished by converting the continuous ode system into a finite dimen
 ## Getting Started
 Please make sure you have Python 3 installed on your computer. pydcol was developed in Python 3.8, but earlier versions of Python 3 should work.
 
+Either `git clone` or download and unzip the repository into a folder on your computer.
+
 It is always recommended to setup a virtual environment so that our dependencies do not mess up your system setup. To do so, run:
 
 On Mac/Linux systems:
