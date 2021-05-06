@@ -87,7 +87,7 @@ sol_c = problem.solve(bounds=bounds, solver='scipy')
 ```
 It is up to the user to ask reasonable things of the optimizer. Ensure that it is physically possible for your system to go from the state X_start to X_goal in the provided time bounds. A good initial guess is not always mandatory but often helps.
 
-8.) Compare the solution to an IVP solution. The control trajectory from the collocation solution found in step 7 is used to integrate the system from t0 to tf. scipy.integrate.solve_ivp is used. The ivp solver can be selected using ivp_method. We recommend implicit methods unless the control trajectory is very smooth.
+8.) Compare the solution to an IVP solution. The control trajectory from the collocation solution found in step 7 is used to integrate the system from t0 to tf. scipy.integrate.solve_ivp is used. The ivp solver can be selected using ivp_method. We recommend using an integration scheme of equal or higher order than the collocation method. Here we used Hermite-Simpson for collocation which should be 4th order accurate, so we can evaluate with 5th order Radau method (https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.solve_ivp.html).
 ```
 problem.evaluate(ivp_method='Radau')
 ```
