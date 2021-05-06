@@ -1,6 +1,6 @@
 """
 
-Block-move example with state and control error analysis.
+Block-move example with error analysis.
 
 Authors: John D'Angelo, Shreyas Sudhaman
 
@@ -51,17 +51,16 @@ if __name__ == "__main__":
 		segments = []
 		for i in range(10):
 			# Define problem
-			problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+			problem = CollocationProblem(state_vars, control_vars, ode, tspan, X_start, X_goal, colloc_method)
 
 			# solve problem
 			print("Start solve")
 			sol_c = problem.solve(bounds=bounds, solver='scipy')
 			if last_sol is not None:
-				prev_points = last_sol.x
-				cur_points = sol_c.x[::2,:]
-				err = np.linalg.norm(cur_points - prev_points, axis=1).mean()
+				prev_points = last_sol.obj
+				cur_points = sol_c.obj
+				err = np.abs(prev_points - cur_points)
 				error[colloc_method].append(err)
-				print("Error: ", err)
 				segments.append(len(tspan))
 
 			last_sol = deepcopy(sol_c)

@@ -1,6 +1,6 @@
 """
 
-Cartpole example with state and control error analysis
+Cartpole example with error analysis
 
 Authors: John D'Angelo, Shreyas Sudhaman
 
@@ -49,6 +49,10 @@ if __name__ == "__main__":
 	X_start = np.array([0, 0, 0, 0]) # arbitrary goal state
 	X_goal = np.array([dist, np.pi, 0, 0]) # arbitrary goal state
 
+	t0_ = 0
+	tf_ = 5
+	N_ = 10 # starting with too few segments results in numerical instability, 10 was sufficient
+
 	# bounds
 	u_max = 100
 	dist_min, dist_max = -10, 10
@@ -59,26 +63,22 @@ if __name__ == "__main__":
 		error[colloc_method] = []
 
 	for colloc_method in colloc_methods:
-		t0_ = 0
-		tf_ = 5
-		N_ = 10
 		tspan = np.linspace(t0_, tf_, N_)
 
 		last_sol = None
 		segments = []
 		for i in range(8):
 			# Define problem
-			problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+			problem = CollocationProblem(state_vars, control_vars, ode, tspan, X_start, X_goal, colloc_method)
 
 			# solve problem
 			print("Start solve")
 			sol_c = problem.solve(bounds=bounds, solver='scipy')
 			if last_sol is not None:
-				prev_points = last_sol.x
-				cur_points = sol_c.x[::2,:]
-				err = np.linalg.norm(cur_points - prev_points,axis=1).mean()
+				prev_points = last_sol.obj
+				cur_points = sol_c.obj
+				err = np.abs(prev_points - cur_points)
 				error[colloc_method].append(err)
-				print("Error: ", err)
 				segments.append(tspan.size)
 
 			last_sol = deepcopy(sol_c)

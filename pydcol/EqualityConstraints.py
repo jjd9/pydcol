@@ -91,8 +91,11 @@ class EqualityConstraints:
 			_in = np.hstack((V[:-1,:], Vmid, V[1:,:],self._h.reshape(-1,1)))
 		_out = self.ceq_lambda(_in.T).T.ravel()
 		initial_constr = (_X[0,:] - self.X_start).ravel()
-		terminal_constr = (_X[-1,:] - self.X_goal).ravel()
-		return np.hstack((_out, initial_constr, terminal_constr))
+		if self.X_goal is not None:
+			terminal_constr = (_X[-1,:] - self.X_goal).ravel()
+			return np.hstack((_out, initial_constr, terminal_constr))
+		else:
+			return np.hstack((_out, initial_constr))
 
 	def jac(self, arg: np.array, return_sparse_indices: bool = False)->Union[tuple, csr_matrix]:
 		"""
@@ -122,7 +125,10 @@ class EqualityConstraints:
 		# jac should be Num_constraints x Opt_dim
 		Opt_dim = (self.X_dim + self.U_dim)
 		Ceq_dim = self.ncon
-		jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde)
+		if self.X_goal is not None:
+			jac_shape = (Ceq_dim * (self.N-1) + 2 * self.X_dim, Opt_dim * self.Ntilde)
+		else:
+			jac_shape = (Ceq_dim * (self.N-1) + self.X_dim, Opt_dim * self.Ntilde)
 
 		# used for determining nonzero elements of jacobian
 		if return_sparse_indices:
@@ -140,12 +146,13 @@ class EqualityConstraints:
 							cols.append(k)
 			# initial and terminal constraint gradients are easy
 			rows += np.arange(Ceq_dim * (self.N-1), Ceq_dim * (self.N-1) + self.X_dim).tolist()
-			rows += np.arange(Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0]).tolist()
 			cols += np.arange(0, self.X_dim).tolist()
-			if self.N != self.Ntilde:
-				cols += np.arange(jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
-			else:
-				cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
+			rows += np.arange(Ceq_dim * (self.N-1) + self.X_dim, jac_shape[0]).tolist()
+			if self.X_goal is not None:
+				if self.N != self.Ntilde:
+					cols += np.arange(jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-(self.X_dim+self.U_dim), jac_shape[1]-(self.N-1)*(self.X_dim+self.U_dim)-self.U_dim).tolist()
+				else:
+					cols += np.arange(jac_shape[1]-(self.X_dim+self.U_dim), jac_shape[1]-self.U_dim).tolist()
 			return rows, cols
 		else:
 			jac = []
@@ -154,7 +161,10 @@ class EqualityConstraints:
 				if self.N != self.Ntilde:
 					jac += J[2*Opt_dim:,:,i].T.ravel().tolist()
 			# initial and terminal constraint gradients are easy
-			jac += np.ones(2 * self.X_dim).tolist()
+			if self.X_goal is not None:
+				jac += np.ones(2 * self.X_dim).tolist()
+			else:
+				jac += np.ones(self.X_dim).tolist()
 			return csr_matrix((jac,self.jac_sparse_indices),shape=jac_shape)
 
 	def hess(self, arg_x: np.array, arg_v: np.array, return_sparse_indices: bool = False)->Union[tuple, csr_matrix]:
@@ -180,14 +190,17 @@ class EqualityConstraints:
 			else:
 				return csr_matrix(hess_shape)
 		else:
+			if self.X_goal is not None:
+				_L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
+			else:
+				_L = arg_v[:-self.X_dim].reshape(self.N-1, self.ncon)
+
 			if self.N == self.Ntilde:
 				V = arg_x.reshape(self.N, self.X_dim+self.U_dim)
-				_L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
 				_in = np.hstack((V[:-1,:], V[1:,:], _L, self._h.reshape(-1,1)))
 			else:
 				V = arg_x[:self.N * (self.X_dim+self.U_dim)].reshape(self.N, self.X_dim+self.U_dim)
 				Vmid = arg_x[self.N * (self.X_dim+self.U_dim):].reshape(self.N - 1, self.X_dim+self.U_dim)
-				_L = arg_v[:-2*self.X_dim].reshape(self.N-1, self.ncon)
 				_in = np.hstack((V[:-1,:], Vmid, V[1:,:], _L, self._h.reshape(-1,1)))
 
 			H = self.ceq_hess_lamb(_in.T)+ 1e-9

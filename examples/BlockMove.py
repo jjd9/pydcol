@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
 	# Define problem
 	print("Setup")
-	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
+	problem = CollocationProblem(state_vars, control_vars, ode, tspan, X_start, X_goal, colloc_method)
 
 	# solve problem
 	print("Solve")

@@ -32,10 +32,10 @@ class CollocationProblem:
 				state_vars, 
 				control_vars, 
 				ode, 
-				X_start, 
-				X_goal, 
 				tspan,
-				colloc_method):
+				X_start, 
+				X_goal=None, 
+				colloc_method=HERM):
 
 		self.ode = ode
 		self.state_vars = state_vars
@@ -143,13 +143,25 @@ class CollocationProblem:
 			# Initialize optimization variables
 			if bounds is not None:
 				u_bounds = bounds[self.X_dim:]
-				u_mid = [(lb+ub)/2.0 for lb,ub in u_bounds]
+				u_mid = []
+				for ubnd in u_bounds:
+					if ubnd[0] is not None and ubnd[1] is not None:
+						u_mid += [(ubnd[0]+ubnd[1])/2.0]
+					elif ubnd[1] is not None:
+						u_mid += [ubnd[1]]
+					elif ubnd[0] is not  None:
+						u_mid += [ubnd[0]]
+					else:
+						u_mid += [0.0]
 			else:
 				u_mid = [0.1] * self.U_dim
 			x0 = [self.X_start.tolist() + u_mid]
 			x0_mid = []
 			for i in range(self.N - 1):
-				xnew = self.X_start + (self.X_goal - self.X_start) * i / self.Ntilde
+				if self.X_goal is not None:
+					xnew = self.X_start + (self.X_goal - self.X_start) * i / self.Ntilde
+				else:
+					xnew = self.X_start + i / self.Ntilde
 				x0.append(xnew.tolist() + u_mid)
 				if self.N != self.Ntilde:
 					x0_mid.append(0.5*(np.array(x0[-1]) + np.array(x0[-2])))
