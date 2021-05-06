@@ -24,7 +24,7 @@ if __name__ == "__main__":
 	# 0 == state error
 	# 1 == control error
 	# 2 == objective error
-	analysis_type = 1
+	analysis_type = 0
 
 	# set of collocation methods to analyze
 	colloc_methods = [EB, TRAP, HERM, RADAU]
@@ -76,6 +76,8 @@ if __name__ == "__main__":
 					prev_points = last_sol.obj
 					cur_points = sol_c.obj
 					err = np.abs(prev_points - cur_points)
+				else:
+					raise(NotImplementedError("Sorry, that error analysis doesn't exist."))
 				error[colloc_method].append(err)
 				segments.append(len(tspan))
 
