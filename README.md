@@ -96,6 +96,7 @@ Please see the examples for more illustrations of how to use the library.
 Easy problems:
 - [ ] Add support for Differential Algebraic Equations's
 - [ ] Add support for using time as a term in the system equations.
+
 Challenging problems:
 - [ ] Generalize the current node setup (where we support X_i, X_mid, X_i+1) to the general case of a group of n nodes so that we can support any integration scheme.
 - [ ] Allow the user to provide a Butcher-Table and use that to define the integration scheme used by pdcol.
@@ -103,6 +104,7 @@ Challenging problems:
 - [ ] Improve the interface for custom objectives so that users do not have to derive their own jacobian and hessian functions.
 - [ ] Connect to more solvers (specifically an SQP solver). 
 - [ ] Clean up the solver interface for IPOPT
+- [ ] Automate installing IPOPT for Windows and Mac users.
 
 ## Third-party Software Acknowledgements
 
