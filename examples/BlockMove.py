@@ -44,13 +44,15 @@ if __name__ == "__main__":
 	bounds = [[None,None],[None,None],[-u_max, u_max]]
 
 	# Define problem
+	print("Setup")
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
 	# solve problem
+	print("Solve")
 	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
 	# evaluate solution
 	problem.evaluate()
 
 	# animate solution
-	draw_block(sol_c.x, save_anim=True)
+	draw_block(sol_c.x, save_anim=False)

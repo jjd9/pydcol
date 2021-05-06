@@ -19,8 +19,6 @@ from pydcol.CollocMethods import *
 from pydcol.ProblemDefinition import CollocationProblem
 
 if __name__ == "__main__":
-	print("Initialize")
-
 	# collocation type
 	colloc_method = HERM
 
@@ -57,13 +55,15 @@ if __name__ == "__main__":
 	tspan = np.linspace(t0_, tf_, N_)
 
 	# Define problem
+	print("Setup")
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
 
 	# solve problem
+	print("Solve")
 	sol_c = problem.solve(bounds=bounds, solver='scipy')
 
 	# evaluate solution
 	problem.evaluate(ivp_method='Radau')
 
 	# animate solution
-	draw_cartpole(sol_c.x, [l, m1, m2, g])
+	draw_cartpole(sol_c.x, [l, m1, m2, g], save_anim=False)

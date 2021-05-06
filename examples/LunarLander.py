@@ -46,6 +46,7 @@ if __name__ == "__main__":
 	x_bounds = [[None,None], [None,None], [0,None], [None,None], [-np.pi/4,np.pi/4], [None,None]]
 	u_bounds = [[-5e3, 5e3],[0, 40e3]]
 	bounds = x_bounds + u_bounds
+
 	# Define problem
 	print("Setup")
 	problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method)
@@ -58,4 +59,4 @@ if __name__ == "__main__":
 	problem.evaluate(ivp_method='Radau')
 
 	# draw lander
-	draw_lander(sol_c.x, sol_c.u)
+	draw_lander(sol_c.x, sol_c.u, save_anim=False)
