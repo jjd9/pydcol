@@ -1,11 +1,13 @@
 # pydcol
 This is a repository for our ME 397 Numerical methods project.
 
-pydcol solves optimal control problems using direct collocation. The specific problem pydcol solves for a given system is to find an open-loop control trajectory connecting an initial system state to a final system state over a fixed time interval. The control trajectory provided by pydcol minimizes the control effort, which is the integral of the sum of all the control inputs squared.
+pydcol solves optimal control problems using direct collocation. pydcol was designed to find an open-loop control trajectory connecting an initial system state to a final system state over a fixed time interval with minimal control effort. Where the control effort is the integral of the sum of all the control inputs squared.
 
 <!-- $ \int_{t_{0}}^{t_{f}} u^2 \,dt $ --> <img style="transform: translateY(0.1em); background: white;" src="assets/u1sApyE8bZ.svg">
 
-This is accomplished by converting the continuous ode system into a finite dimensional nonlinear optimization problem (NLP) using an integration scheme. This process is called direct collocation or simultaneous discretization.
+However, pydcol also allows the user to provide a custom objective function and supports free terminal states (i.e. you do not have to fix the terminal state).
+
+pydcol solves this problem by converting the continuous ode system into a finite dimensional nonlinear optimization problem (NLP) using an integration scheme. This process is called direct collocation or simultaneous discretization.
 
 ## Getting Started
 Please make sure you have Python 3 installed on your computer. pydcol was developed in Python 3.8, but earlier versions of Python 3 should work.
@@ -89,6 +91,18 @@ problem.evaluate(ivp_method='Radau')
 ```
 
 Please see the examples for more illustrations of how to use the library.
+
+## Repo TODO List
+Easy problems:
+- [ ] Add support for Differential Algebraic Equations's
+- [ ] Add support for using time as a term in the system equations.
+Challenging problems:
+- [ ] Generalize the current node setup (where we support X_i, X_mid, X_i+1) to the general case of a group of n nodes so that we can support any integration scheme.
+- [ ] Allow the user to provide a Butcher-Table and use that to define the integration scheme used by pdcol.
+- [ ] Add support for problems where the final time is not fixed and/or where we want to minimize the final time.
+- [ ] Improve the interface for custom objectives so that users do not have to derive their own jacobian and hessian functions.
+- [ ] Connect to more solvers (specifically an SQP solver). 
+- [ ] Clean up the solver interface for IPOPT
 
 ## Third-party Software Acknowledgements
 
