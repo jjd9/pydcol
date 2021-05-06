@@ -45,8 +45,8 @@ if __name__ == "__main__":
 
 	dist = -4.0 # distance traveled during swing-up maneuver
 
-	X_start = np.array([0, 0, 0, 0]) # arbitrary goal state
-	X_goal = np.array([dist, np.pi, 0, 0]) # arbitrary goal state
+	X_start = np.array([0, 0, 0, 0]) # known initial state
+	X_goal = np.array([dist, np.pi, 0, 0]) # desired goal state
 
 	# bounds
 	u_max = 100

@@ -48,8 +48,8 @@ if __name__ == "__main__":
 	tf_ = 6
 	N_ = 100
 
-	X_start = np.array([0, 0, 0, 0], dtype=float) # arbitrary goal state
-	X_goal = np.array([np.pi, 0, np.pi, 0], dtype=float) # arbitrary goal state
+	X_start = np.array([0, 0, 0, 0], dtype=float) # known initial state
+	X_goal = np.array([np.pi, 0, np.pi, 0], dtype=float) # desired goal state
 
 	# bounds
 	u_max = 50

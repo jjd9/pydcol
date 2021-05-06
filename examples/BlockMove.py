@@ -36,8 +36,8 @@ if __name__ == "__main__":
 	N_ = 100
 	tspan = np.linspace(t0_, tf_, N_)
 
-	X_start = np.array([0, 0]) # arbitrary goal state
-	X_goal = np.array([1, 0]) # arbitrary goal state
+	X_start = np.array([0, 0]) # known initial state
+	X_goal = np.array([1, 0]) # desired goal state
 
 	# bounds = [[lb_x, ub_x],[lb_v, ub_v],[lb_u, ub_u]]
 	u_max = 10

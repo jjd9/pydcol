@@ -35,7 +35,8 @@ class CollocationProblem:
 				tspan,
 				X_start, 
 				X_goal=None, 
-				colloc_method=HERM):
+				colloc_method=HERM,
+				custom_objective=None):
 
 		self.ode = ode
 		self.state_vars = state_vars
@@ -43,6 +44,8 @@ class CollocationProblem:
 		self.ode_fun = lambdify(self.state_vars+self.control_vars, Matrix(self.ode), 'numpy')
 		self.colloc_method = colloc_method
 		self.tspan = tspan
+
+		self.objective = custom_objective
 
 		self.X_start = X_start
 		self.X_goal = X_goal
@@ -75,19 +78,20 @@ class CollocationProblem:
 		U = Matrix(control_vars)
 
 		# Scalar Objective
-		if self.colloc_method in [HERM]:
-			Obj = 0
-			for i in range(self.U_dim):
-				effort = self.control_vars[i]**2
-				Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
-		elif self.colloc_method in [RADAU]:
-			Obj = 0
-			for i in range(self.U_dim):
-				effort = self.control_vars[i]**2
-				Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort)
-		else:
-			effort = self.h * U.multiply_elementwise(U)
-			Obj = np.sum(effort[:])
+		if self.objective is None:
+			if self.colloc_method in [HERM]:
+				Obj = 0
+				for i in range(self.U_dim):
+					effort = self.control_vars[i]**2
+					Obj += (self.h/6.0) * (effort + 4.0 * effort.subs(self.mid_dict) + effort.subs(self.prev_dict))
+			elif self.colloc_method in [RADAU]:
+				Obj = 0
+				for i in range(self.U_dim):
+					effort = self.control_vars[i]**2
+					Obj += (self.h/4.0) * (3.0 * effort.subs(self.mid_dict) + effort)
+			else:
+				effort = self.h * U.multiply_elementwise(U)
+				Obj = np.sum(effort[:])
 
 		# Equality Constraints
 		C_eq = []
@@ -119,8 +123,9 @@ class CollocationProblem:
 				C_eq+=[state_vars[i] - state_vars[i].subs(self.prev_dict)-3.0/4.0*self.h*ode[i].subs(self.mid_dict)-1.0/4.0*self.h*ode[i]] # end point residue
 
 		# Compile objective and equality constraints
-		self.objective = Objective(self, Obj)
 		self.equality_constr = EqualityConstraints(self, Matrix(C_eq))
+		if self.objective is None:
+			self.objective = Objective(self, Obj)
 
 	def solve(self, x0: np.array = None, bounds: list = None, solver: str='scipy')->Solution:
 		"""

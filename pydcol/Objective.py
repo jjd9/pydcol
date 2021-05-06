@@ -16,6 +16,16 @@ from typing import Union
 # pydcol imports
 from .SymUtils import fast_jac, fast_half_hess
 
+class CustomObjective:
+	def __init__(self):
+		pass
+	def eval(self,arg):
+		pass	
+	def jac(self,arg):
+		pass	
+	def hess(self,arg):
+		pass	
+
 class Objective:
 	def __init__(self, parent, Obj):
 		self.N = parent.N

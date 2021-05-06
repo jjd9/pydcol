@@ -41,8 +41,8 @@ if __name__ == "__main__":
 	tspan = np.linspace(t0_, tf_, N_)
 
 	# [x, xdot, y, ydot, th, thdot]
-	X_start = np.array([0.5e3, 0, 3e3, 0, 0, 0], dtype=float) # arbitrary goal state
-	X_goal = np.array([0, 0, 0, 0, 0, 0], dtype=float) # arbitrary goal state
+	X_start = np.array([0.5e3, 0, 3e3, 0, 0, 0], dtype=float) # known initial state
+	X_goal = np.array([0, 0, 0, 0, 0, 0], dtype=float) # desired goal state
 	x_bounds = [[None,None], [None,None], [0,None], [None,None], [-np.pi/4,np.pi/4], [None,None]]
 	u_bounds = [[-5e3, 5e3],[0, 40e3]]
 	bounds = x_bounds + u_bounds
