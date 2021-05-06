@@ -117,7 +117,7 @@ class CollocationProblem:
 				C_eq+=[state_vars[i].subs(self.mid_dict) - state_vars[i].subs(self.prev_dict)-5.0/12.0*self.h*ode[i].subs(self.mid_dict)+1.0/12.0*self.h*ode[i]] # intermediate point residue
 			for i in range(self.X_dim):
 				C_eq+=[state_vars[i] - state_vars[i].subs(self.prev_dict)-3.0/4.0*self.h*ode[i].subs(self.mid_dict)-1.0/4.0*self.h*ode[i]] # end point residue
-              		
+
 		# Compile objective and equality constraints
 		self.objective = Objective(self, Obj)
 		self.equality_constr = EqualityConstraints(self, Matrix(C_eq))

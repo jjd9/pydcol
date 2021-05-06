@@ -52,7 +52,7 @@ if __name__ == "__main__":
 	X_goal = np.array([np.pi, 0, np.pi, 0], dtype=float) # arbitrary goal state
 
 	# bounds
-	u_max = 100
+	u_max = 50
 	bounds = [[-2*np.pi,2*np.pi],[None, None],[-2*np.pi,2*np.pi],[None, None],[-u_max,u_max]]
 	tspan = np.linspace(t0_, tf_, N_)
 
@@ -68,4 +68,4 @@ if __name__ == "__main__":
 	problem.evaluate(ivp_method='Radau')
 
 	# animate solution
-	draw_double_pendulum(sol_c.x, [l1, l2, m1, m2, g], save_anim=False)
+	draw_double_pendulum(sol_c.x, [l1, l2, m1, m2, g], save_anim=False, interval=5)
