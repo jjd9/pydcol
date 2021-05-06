@@ -26,6 +26,8 @@ python -m venv pydcol-env
 pydcol-env\Scripts\activate.bat
 ```
 
+Then cd into the `pydcol` folder you downloaded.
+
 The python modules can then be installed using: 
 ```pip install -r requirements.txt```
 
