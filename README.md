@@ -46,11 +46,13 @@ python BlockMove.py
 ## Usage
 1.) Define your ode model as a list of sympy expressions. The list should only contain the right-hand-side of the ode equations. So if your system was:
 ```
-dx/dt = y + u
-dy/dt = x^2 + y
+dx/dt = v
+dy/dt = u
 ```
-your list should be: ode = [y + u, x^2 + y]
-
+your list should be: 
+```
+ode = [v, u]
+```
 2.) Distinguish control variables from state variables. This is so that the solver can properly compute the effort objective. For this toy example, u is the only control variable so:
 ```
 state_vars = [x, y]
@@ -73,11 +75,11 @@ bounds = [[None,None],[None,None],[-u_max, u_max]]
 t0 = 0
 tf = 1
 N  = 10
-tspan = np.linspace(0,1,N)
+tspan = np.linspace(t0,tf,N)
 ```
-6.) Define the problem. At this stage, your problem is converted into an objective and constraint function (along with functions to evalute the 1st and second derivatives of those functions). Multiple collocation methods are supported. Here we use euler-forward. For a full list of methods, please see pydol/CollocationMethods.py.
+6.) Define the problem. At this stage, your problem is converted into an objective and constraint function (along with functions to evalute the 1st and second derivatives of those functions). Multiple collocation methods are supported. Here we use hermite-simpson (`HERM`). For a full list of methods, please see pydol/CollocationMethods.py. Also note that X_goal, colloc_method, and custom_objective are optional inputs and can be left out. However, unless you are defining your own objective function through the custom_objective input (see the `examples/CustomObjective.py` script), not defining X_goal will result in a solution with no control input. 
 ```
-problem = CollocationProblem(state_vars, control_vars, ode, X_start, X_goal, tspan, colloc_method=EF)
+problem = CollocationProblem(state_vars, control_vars, ode, tspan, X_start, X_goal, colloc_method=HERM, custom_objective=None)
 ```
 7.) Solve the problem. The scipy.minimize,trust-constr (https://docs.scipy.org/doc/scipy/reference/optimize.minimize-trustconstr.html) and IPOPT (https://github.com/coin-or/Ipopt) solvers are supported. IPOPT takes faster steps and handles large, sparse systems better (>6 states and/or 1000's of nodes). scipy.minimize.trust-constr takes more intelligent steps and handles small systems better (<6 states and/or 100's of nodes). 
 ```
