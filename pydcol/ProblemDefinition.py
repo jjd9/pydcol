@@ -133,7 +133,7 @@ class CollocationProblem:
 
 		Parameters
 		----------
-		x0 -- initial guess for solution
+		x0 -- initial guess for solution, if not provided, an educated guess is based on initial/final state.
 		bounds -- list of [upper, lower] bound lists, one for each variable (order should match x0)
 		solver -- which optimizer to use (options: scipy, ipopt)
 
