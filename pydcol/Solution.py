@@ -28,6 +28,9 @@ class Solution:
 			self.success = sol.success
 			V = sol.x.reshape(Ntilde, X_dim+U_dim)
 
+		self.x_endpts = V[:N, :X_dim].copy()
+		self.u_endpts = V[:N, X_dim:].copy()
+
 		if N != Ntilde:
 			# put points in the right order
 			Vtemp = [V[0,:]]

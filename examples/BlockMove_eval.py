@@ -20,6 +20,13 @@ import matplotlib.pyplot as plt
 
 if __name__ == "__main__":
 
+	# CHOOSE HOW TO EVALUATE THE ERROR:
+	# 0 == state error
+	# 1 == control error
+	# 2 == objective error
+	analysis_type = 1
+
+	# set of collocation methods to analyze
 	colloc_methods = [EB, TRAP, HERM, RADAU]
 
 	# define variables
@@ -57,9 +64,18 @@ if __name__ == "__main__":
 			print("Start solve")
 			sol_c = problem.solve(bounds=bounds, solver='scipy')
 			if last_sol is not None:
-				prev_points = last_sol.obj
-				cur_points = sol_c.obj
-				err = np.abs(prev_points - cur_points)
+				if analysis_type == 0: # State
+					prev_points = last_sol.x_endpts
+					cur_points = sol_c.x_endpts[::2,:]
+					err = np.linalg.norm(prev_points[1:-1,:] - cur_points[1:-1,:],axis=1).mean()
+				elif analysis_type == 1: # Control
+					prev_points = last_sol.u_endpts
+					cur_points = sol_c.u_endpts[::2,:]
+					err = np.linalg.norm(prev_points[1:,:] - cur_points[1:,:],axis=1).mean()
+				elif analysis_type == 2: # Objective
+					prev_points = last_sol.obj
+					cur_points = sol_c.obj
+					err = np.abs(prev_points - cur_points)
 				error[colloc_method].append(err)
 				segments.append(len(tspan))
 
